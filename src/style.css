@@ -7,15 +7,24 @@ body {
 }
 
 html {
-  background: black;
+  background: #FAFAFA;
 }
 
-* {
+html,
+body,
+#content,
+#sidebar-body {
   overflow: -moz-scrollbars-none;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-*::-webkit-scrollbar {
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
   display: none;
+}
+
+.vue-codemirror,
+.cm-editor {
+  height: 100%;
 }

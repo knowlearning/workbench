@@ -4,10 +4,14 @@
   import Button from './button.vue'
   import Editor from '@knowlearning/editor/editor.vue'
 
+  const ui = reactive(await Agent.state('ui'))
   const content = reactive(await Agent.state('content'))
-  const sidebarWidth = ref(300)
-  const editingName = ref(false)
   const playing = ref(false)
+
+  ui.sidebar = true
+  ui.editingName = false
+  ui.playing = false
+  ui.sidebarWidth = 300
 
   const orderedContent = computed(() => {
     return (
@@ -63,7 +67,10 @@
     <div
       id="sidebar"
       :style="`
-        width: ${sidebarWidth}px;
+        width: ${ui.sidebarWidth}px;
+        height: 100vh;
+        flex-shrink: 0;
+        flex-grow: 0;
       `"
     >
       <div id="sidebar-header">
@@ -84,7 +91,7 @@
         >
           <div class="sidebar-content-inner">
             <div class="sidebar-content-name">
-              <span v-if="editingName && active">
+              <span v-if="ui.editingName && active">
                 <Button
                   icon="fa-solid fa-xmark"
                   @mousedown="content[uuid].deleted = true"
@@ -92,8 +99,8 @@
                   type="text"
                   ref="nameInput"
                   v-focus
-                  @keypress.enter="editingName = false"
-                  @blur="editingName = false"
+                  @keypress.enter="ui.editingName = false"
+                  @blur="ui.editingName = false"
                   v-model="content[uuid].label"
                 />
               </span>
@@ -104,16 +111,29 @@
             <div v-if="active">
               <Button
                 icon="fa-solid fa-ellipsis"
-                @mousedown="editingName = !editingName"
+                @mousedown="ui.editingName = !ui.editingName"
               />
               <Button
                 icon="fa-solid fa-play"
-                @click="playing = true"
+                @click="ui.playing = true"
               />
             </div>
           </div>
         </div>
       </div>
+    </div>
+    <div
+      id="toolbar"
+      style="
+        flex-shrink: 0;
+        flex-grow: 0;
+        background: #EEEEEE;
+      "
+    >
+      <Button
+        icon="fa-solid fa-bars"
+        @click="ui.sidebarWidth = ui.sidebarWidth === 0 ? 300 : 0"
+      />
     </div>
     <div id="content">
       <Editor
@@ -128,17 +148,17 @@
   <div
     id="mindstorm-player-wrapper"
     class="fade-in"
-    v-if="playing"
+    v-if="ui.playing"
   >
     <div id="mindstorm-player-controls">
       <Button
         icon="fa-solid fa-xmark"
-        @click="playing = false"
+        @click="ui.playing = false"
       />
     </div>
     <vueEmbedComponent
       :id="activeContent"
-      @close="playing = false"
+      @close="ui.playing = false"
       style="background: black;"
     />
   </div>
@@ -158,6 +178,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    transition: width 0.2s ease-out;
   }
 
   #content,
