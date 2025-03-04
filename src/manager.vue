@@ -2,6 +2,7 @@
   import { ref, reactive, computed } from 'vue'
   import { vueEmbedComponent } from '@knowlearning/agents/vue.js'
   import Button from './button.vue'
+  import Editor from '@knowlearning/editor/editor.vue'
 
   const content = reactive(await Agent.state('content'))
   const sidebarWidth = ref(300)
@@ -115,13 +116,13 @@
       </div>
     </div>
     <div id="content">
-      <div
+      <Editor
         v-if="activeContent"
         :key="activeContent"
-        :uuid="activeContent"
-      >
-        {{ activeContent }}
-      </div>
+        :id="activeContent"
+        :resolveLanguage="path => {}"
+        :resolveWidget="path => {}"
+      />
     </div>
   </div>
   <div
