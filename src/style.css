@@ -23,8 +23,3 @@ html::-webkit-scrollbar,
 body::-webkit-scrollbar {
   display: none;
 }
-
-.vue-codemirror,
-.cm-editor {
-  height: 100%;
-}

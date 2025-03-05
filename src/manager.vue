@@ -6,12 +6,11 @@
 
   const ui = reactive(await Agent.state('ui'))
   const content = reactive(await Agent.state('content'))
-  const playing = ref(false)
+  const draggingSidebar = ref(false)
 
-  ui.sidebar = true
   ui.editingName = false
   ui.playing = false
-  ui.sidebarWidth = 300
+  if (ui.sidebarWidth === undefined) ui.sidebarWidth = 300
 
   const orderedContent = computed(() => {
     return (
@@ -60,12 +59,17 @@
 
     content[uuid].active = true
   }
+
+  function dragSidebar({ detail: { dx } }) {
+    ui.sidebarWidth = Math.max(0, ui.sidebarWidth + dx)
+  }
 </script>
 
 <template>
   <div id="main">
     <div
       id="sidebar"
+      :class="{ dragging: draggingSidebar }"
       :style="`
         width: ${ui.sidebarWidth}px;
         height: 100vh;
@@ -127,8 +131,14 @@
       style="
         flex-shrink: 0;
         flex-grow: 0;
-        background: #EEEEEE;
+        background: #F5F5F5;
+        border-left: 1px solid #ddd;
+        border-right: 1px solid #ddd;
       "
+      v-drag
+      @dragstart="draggingSidebar = true"
+      @drag="dragSidebar"
+      @dragend="draggingSidebar = false"
     >
       <Button
         icon="fa-solid fa-bars"
@@ -142,6 +152,7 @@
         :id="activeContent"
         :resolveLanguage="path => {}"
         :resolveWidget="path => {}"
+        fill-height
       />
     </div>
   </div>
@@ -178,6 +189,9 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+  }
+
+  #sidebar:not(.dragging) {
     transition: width 0.2s ease-out;
   }
 
