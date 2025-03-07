@@ -9,7 +9,6 @@
   const draggingSidebar = ref(false)
 
   ui.editingName = false
-  ui.playing = false
   if (ui.sidebarWidth === undefined) ui.sidebarWidth = 300
 
   const orderedContent = computed(() => {
