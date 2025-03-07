@@ -116,10 +116,6 @@
                 icon="fa-solid fa-ellipsis"
                 @mousedown="ui.editingName = !ui.editingName"
               />
-              <Button
-                icon="fa-solid fa-play"
-                @click="ui.playing = true"
-              />
             </div>
           </div>
         </div>
@@ -142,6 +138,11 @@
       <Button
         icon="fa-solid fa-bars"
         @click="ui.sidebarWidth = ui.sidebarWidth === 0 ? 300 : 0"
+      />
+      <br>
+      <Button
+        icon="fa-solid fa-play"
+        @click="ui.playing = true"
       />
     </div>
     <div id="content">
