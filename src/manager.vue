@@ -124,6 +124,7 @@
     <div
       id="toolbar"
       style="
+        cursor: ew-resize;
         flex-shrink: 0;
         flex-grow: 0;
         background: #F5F5F5;
