@@ -218,6 +218,14 @@
         :id="id"
         @close="removeInstance(id, index)"
       />
+      <div
+        class="instance-body-resizer"
+        v-drag
+        @drag="({ detail: {dx, dy}}) => {
+          instance.width = Math.max(Math.min(instance.width + dx, screenWidth - instance.x), 192)
+          instance.height = Math.max(Math.min(instance.height + dy, screenHeight - instance.y), 192)
+        }"
+      />
     </div>
   </div>
 </template>
@@ -283,7 +291,6 @@
 
   .instance-wrapper {
     position: absolute;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
     background: white;
@@ -297,9 +304,16 @@
 
   .instance-body {
     flex-grow: 1;
+    position: relative;
   }
 
-  #mindstorm-player-controls {
+  .instance-body-resizer {
     position: absolute;
+    width: 16px;
+    height: 16px;
+    right: -8px;
+    bottom: -8px;
+    border: 1px solid red;
+    cursor: nwse-resize;
   }
 </style>
