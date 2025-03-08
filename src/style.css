@@ -23,3 +23,11 @@ html::-webkit-scrollbar,
 body::-webkit-scrollbar {
   display: none;
 }
+
+body.dragging-directive-active {
+  user-select: none;
+}
+
+body.dragging-directive-active iframe {
+  pointer-events: none;
+}

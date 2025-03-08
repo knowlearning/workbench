@@ -44,6 +44,7 @@ export default {
     const handleStart = event => {
       if (event.type === 'mousedown' || event.touches) {
         isDragging = true
+        document.body.classList.add('dragging-directive-active')
         const clientX = event.touches ? event.touches[0].clientX : event.clientX
         const clientY = event.touches ? event.touches[0].clientY : event.clientY
 
@@ -76,6 +77,7 @@ export default {
 
     const handleEnd = event => {
       isDragging = false
+      document.body.classList.remove('dragging-directive-active')
 
       const detail = calculatePoints(event)
 

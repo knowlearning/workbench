@@ -22,6 +22,23 @@
     )
   })
 
+  const screenWidth = window.innerWidth
+  const screenHeight = window.innerHeight
+
+  const instances = computed(() => {
+    const players = []
+    Object
+      .entries(content)
+      .forEach(([id, { label, instances }]) => {
+        instances
+          .forEach((instance, index) => {
+            console.log(instance)
+            players.push({ id, instance, index, label })
+          })
+      })
+    return players
+  })
+
   const orderedVisibleContent = computed(() => orderedContent.value.filter(([_, { deleted }]) => !deleted))
 
   const activeContent = computed(() => {
@@ -45,7 +62,8 @@
     content[uuid] = {
       displayIndex: 0,
       label: 'New Content',
-      active: true
+      active: true,
+      instances: []
     }
   }
 
@@ -61,6 +79,13 @@
 
   function dragSidebar({ detail: { dx } }) {
     ui.sidebarWidth = Math.max(0, ui.sidebarWidth + dx)
+  }
+
+  function removeInstance(id, index) {
+    //  TODO: fix persistent splice
+    const copy = JSON.parse(JSON.stringify(content[id].instances))
+    copy.splice(index, 1)
+    content[id].instances = copy
   }
 </script>
 
@@ -143,7 +168,14 @@
       <br>
       <Button
         icon="fa-solid fa-play"
-        @click="ui.playing = true"
+        @click="() => {
+          content[activeContent].instances.push({
+            x: 100,
+            y: 100,
+            width: 500,
+            height: 500
+          })
+        }"
       />
     </div>
     <div id="content">
@@ -158,21 +190,35 @@
     </div>
   </div>
   <div
-    id="mindstorm-player-wrapper"
-    class="fade-in"
-    v-if="ui.playing"
+    class="instance-wrapper fade-in"
+    v-for="{ id, instance, index, label } in instances"
+    :key="id + index"
+    :style="{
+      left: `${instance.x}px`,
+      top: `${instance.y}px`,
+      width: `${instance.width}px`,
+      height: `${instance.height}px`
+    }"
   >
-    <div id="mindstorm-player-controls">
+    <div
+      class="instance-header"
+      v-drag
+      @drag="({ detail: {dx, dy} }) => {
+        instance.x = Math.max(Math.min(instance.x + dx, screenWidth - instance.width), 0)
+        instance.y = Math.max(Math.min(instance.y + dy, screenHeight - instance.height), 0)
+      }"
+    >
       <Button
         icon="fa-solid fa-xmark"
-        @click="ui.playing = false"
+        @click="removeInstance(id, index)"
       />
     </div>
-    <vueEmbedComponent
-      :id="activeContent"
-      @close="ui.playing = false"
-      style="background: black;"
-    />
+    <div class="instance-body">
+      <vueEmbedComponent
+        :id="id"
+        @close="removeInstance(id, index)"
+      />
+    </div>
   </div>
 </template>
 
@@ -235,13 +281,22 @@
       }
   }
 
-  #mindstorm-player-wrapper {
+  .instance-wrapper {
     position: absolute;
-    width: 100%;
-    height: 100%;
     overflow: hidden;
-    top: 0;
-    left: 0;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 4px;
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;
+  }
+
+  .instance-header {
+    background: #EEEEEE;
+  }
+
+  .instance-body {
+    flex-grow: 1;
   }
 
   #mindstorm-player-controls {

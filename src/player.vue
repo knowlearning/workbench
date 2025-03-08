@@ -1,5 +1,5 @@
 <script setup>
-  import { reactive } from 'vue'
+  import { reactive, ref } from 'vue'
   import { useKeyboardEvents } from './composables/keyboard.js'
 
   const { registerKey } = useKeyboardEvents()
@@ -7,8 +7,10 @@
 
   registerKey('Escape', () => Agent.close())
 
-  const content = JSON.parse(JSON.stringify(await Agent.state(props.uuid)))
-  const state = reactive(await Agent.state(`run-state/${props.uuid}`))
+  const content = ref(null)
+  const state = reactive(await Agent.watch(`run-state/${props.uuid}`))
+
+  Agent.watch(props.uuid, update => content.value = update.state)
 </script>
 
 <template>
