@@ -1,8 +1,8 @@
 <script setup>
   import { ref, reactive, computed } from 'vue'
-  import { vueEmbedComponent } from '@knowlearning/agents/vue.js'
   import Button from './button.vue'
   import Editor from '@knowlearning/editor/editor.vue'
+  import Instance from './instance.vue'
 
   const ui = reactive(await Agent.state('ui'))
   const content = reactive(await Agent.state('content'))
@@ -21,9 +21,6 @@
         ) => a - b)
     )
   })
-
-  const screenWidth = window.innerWidth
-  const screenHeight = window.innerHeight
 
   const instances = computed(() => {
     const players = []
@@ -87,6 +84,7 @@
     copy.splice(index, 1)
     content[id].instances = copy
   }
+
 </script>
 
 <template>
@@ -189,45 +187,12 @@
       />
     </div>
   </div>
-  <div
-    class="instance-wrapper fade-in"
-    v-for="{ id, instance, index, label } in instances"
-    :key="id + index"
-    :style="{
-      left: `${instance.x}px`,
-      top: `${instance.y}px`,
-      width: `${instance.width}px`,
-      height: `${instance.height}px`
-    }"
-  >
-    <div
-      class="instance-header"
-      v-drag
-      @drag="({ detail: {dx, dy} }) => {
-        instance.x = Math.max(Math.min(instance.x + dx, screenWidth - instance.width), 0)
-        instance.y = Math.max(Math.min(instance.y + dy, screenHeight - instance.height), 0)
-      }"
-    >
-      <Button
-        icon="fa-solid fa-xmark"
-        @click="removeInstance(id, index)"
-      />
-    </div>
-    <div class="instance-body">
-      <vueEmbedComponent
-        :id="id"
-        @close="removeInstance(id, index)"
-      />
-      <div
-        class="instance-body-resizer"
-        v-drag
-        @drag="({ detail: {dx, dy}}) => {
-          instance.width = Math.max(Math.min(instance.width + dx, screenWidth - instance.x), 192)
-          instance.height = Math.max(Math.min(instance.height + dy, screenHeight - instance.y), 192)
-        }"
-      />
-    </div>
-  </div>
+  <Instance
+    v-for="instance in instances"
+    :key="instance.id + instance.index"
+    v-bind="instance"
+    @remove="({ id, index }) => removeInstance(id, index)"
+  />
 </template>
 
 <style scoped>
@@ -275,45 +240,4 @@
     flex-grow: 1;
   }
 
-  .fade-in {
-      opacity: 0;
-      animation: fadeIn 0.2s ease-in forwards;
-  }
-
-  @keyframes fadeIn {
-      from {
-          opacity: 0;
-      }
-      to {
-          opacity: 1;
-      }
-  }
-
-  .instance-wrapper {
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    background: white;
-    border-radius: 4px;
-    box-shadow: rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;
-  }
-
-  .instance-header {
-    background: #EEEEEE;
-  }
-
-  .instance-body {
-    flex-grow: 1;
-    position: relative;
-  }
-
-  .instance-body-resizer {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    right: -8px;
-    bottom: -8px;
-    border: 1px solid red;
-    cursor: nwse-resize;
-  }
 </style>
