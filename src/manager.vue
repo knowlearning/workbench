@@ -119,10 +119,9 @@
       </div>
       <div id="sidebar-body">
         <SidebarContent
-          v-for="[uuid, {label, active}] in orderedVisibleContent"
+          v-for="[uuid, {active}] in orderedVisibleContent"
           :key="uuid"
           :uuid="uuid"
-          :label="label"
           :active="active"
           @click="selectContent(uuid)"
         />
