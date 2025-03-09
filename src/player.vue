@@ -10,7 +10,10 @@
   const content = ref(null)
   const state = reactive(await Agent.state(`run-state/${props.uuid}`))
 
-  Agent.watch(props.uuid, update => content.value = update.state)
+  Agent.watch(props.uuid, update => {
+    console.log('PLAYER STATE UPDATE....', update.state)
+    content.value = update.state
+  })
 </script>
 
 <template>

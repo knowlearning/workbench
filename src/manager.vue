@@ -3,6 +3,7 @@
   import Button from './button.vue'
   import Editor from '@knowlearning/editor/editor.vue'
   import Instance from './instance.vue'
+  import SidebarContent from './sidebar-content.vue'
 
   const ui = reactive(await Agent.state('ui'))
   const content = reactive(await Agent.state('content'))
@@ -11,16 +12,11 @@
   ui.editingName = false
   if (ui.sidebarWidth === undefined) ui.sidebarWidth = 300
 
-  const orderedContent = computed(() => {
-    return (
-      Object
-        .entries(content)
-        .sort((
-          [_1, { displayIndex: a }],
-          [_2, { displayIndex: b }]
-        ) => a - b)
-    )
-  })
+  const orderedContent = computed(() => (
+    Object
+      .entries(content)
+      .sort((a, b) => a[1].displayIndex - b[1].displayIndex)
+  ))
 
   const instances = computed(() => {
     const players = []
@@ -122,42 +118,14 @@
         />
       </div>
       <div id="sidebar-body">
-        <div
+        <SidebarContent
           v-for="[uuid, {label, active}] in orderedVisibleContent"
           :key="uuid"
-          :class="{
-            'sidebar-content': true,
-            active
-          }"
+          :uuid="uuid"
+          :label="label"
+          :active="active"
           @click="selectContent(uuid)"
-        >
-          <div class="sidebar-content-inner">
-            <div class="sidebar-content-name">
-              <span v-if="ui.editingName && active">
-                <Button
-                  icon="fa-solid fa-xmark"
-                  @mousedown="content[uuid].deleted = true"
-                /> <input
-                  type="text"
-                  ref="nameInput"
-                  v-focus
-                  @keypress.enter="ui.editingName = false"
-                  @blur="ui.editingName = false"
-                  v-model="content[uuid].label"
-                />
-              </span>
-              <span v-else>
-                {{ label }}
-              </span>
-            </div>
-            <div v-if="active">
-              <Button
-                icon="fa-solid fa-ellipsis"
-                @mousedown="ui.editingName = !ui.editingName"
-              />
-            </div>
-          </div>
-        </div>
+        />
       </div>
     </div>
     <div
@@ -237,25 +205,6 @@
   #sidebar-body {
     flex-grow: 1;
     overflow-y: scroll;
-  }
-
-  .sidebar-content.active {
-    background: #888888;
-  }
-
-  .sidebar-content {
-    padding: 0 1em;
-    cursor: pointer;
-  }
-
-  .sidebar-content-inner {
-    display: flex;
-    align-items: center;
-    height: 40px;
-  }
-
-  .sidebar-content-name {
-    flex-grow: 1;
   }
 
 </style>
