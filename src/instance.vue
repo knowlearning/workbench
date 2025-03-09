@@ -1,7 +1,7 @@
 <script setup>
   import useScreen from './composables/screen.js'
   import Button from './button.vue'
-  import { vueEmbedComponent } from '@knowlearning/agents/vue.js'
+  import { vueEmbedComponent, vueScopeComponent } from '@knowlearning/agents/vue.js'
 
   const { width, height } = useScreen()
 
@@ -9,8 +9,7 @@
     id: String,
     instance: Object,
     index: Number,
-    focused: Number,
-    label: String
+    focused: Number
   })
 
   const emit = defineEmits(['remove', 'bringToTop'])
@@ -72,7 +71,7 @@
         @touchstart.stop
       />
       <span class="instance-header-label">
-        {{ label }}
+        <vueScopeComponent :id="id" :path="['name']"  />
       </span>
     </div>
     <div class="instance-body">

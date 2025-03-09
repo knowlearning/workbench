@@ -22,11 +22,10 @@
     const players = []
     Object
       .entries(content)
-      .forEach(([id, { label, instances }]) => {
+      .forEach(([id, { instances }]) => {
         instances
           .forEach((instance, index) => {
-            console.log(instance)
-            players.push({ id, instance, index, label })
+            players.push({ id, instance, index })
           })
       })
     return players
@@ -54,7 +53,6 @@
 
     content[uuid] = {
       displayIndex: 0,
-      label: 'New Content',
       active: true,
       instances: []
     }
