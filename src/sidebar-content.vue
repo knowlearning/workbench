@@ -3,20 +3,12 @@
   import { vueScopeComponent } from '@knowlearning/agents/vue.js'
   import Button from './button.vue'
 
-  defineEmits(['delete'])
+  const emit = defineEmits(['delete'])
 
   const props = defineProps({
     uuid: String,
     active: Boolean
   })
-
-  const content = reactive({
-    state: await Agent.state(props.uuid)
-  })
-
-  Agent.watch(props.uuid, async () => content.state = await Agent.state(props.uuid))
-
-  const editingName = ref(false)
 
 </script>
 
@@ -30,27 +22,15 @@
   >
     <div class="sidebar-content-inner">
       <div class="sidebar-content-name">
-        <span v-if="editingName">
-          <Button
-            icon="fa-solid fa-xmark"
-            @mousedown="emit('delete')"
-          /> <input
-            type="text"
-            ref="nameInput"
-            v-focus
-            @keypress.enter="editingName = false"
-            @blur="editingName = false"
-            v-model="content.state.name"
-          />
-        </span>
-        <span v-else>
-          {{ content.state.name }}
-        </span>
+        <vueScopeComponent
+          :id="props.uuid"
+          :path="['name']"
+        />
       </div>
       <div v-if="active">
         <Button
-          icon="fa-solid fa-ellipsis"
-          @mousedown="editingName = true"
+          icon="fa-solid fa-xmark"
+          @click.stop="emit('delete')"
         />
       </div>
     </div>

@@ -47,6 +47,9 @@
     const uuid = Agent.uuid()
     deactivateActive()
 
+    const state = await Agent.state(uuid)
+    state.name = 'New Content'
+
     Object
       .values(content)
       .forEach(v => v.displayIndex += 1)
@@ -66,6 +69,10 @@
       })
 
     content[uuid].active = true
+  }
+
+  function deleteContent(uuid) {
+    delete content[uuid]
   }
 
   function dragSidebar({ detail: { dx } }) {
@@ -122,6 +129,7 @@
           :uuid="uuid"
           :active="active"
           @click="selectContent(uuid)"
+          @delete="deleteContent(uuid)"
         />
       </div>
     </div>

@@ -122,6 +122,7 @@
     background: #EEEEEE;
     padding: 4px;
     cursor: move;
+    border-bottom: 1px solid #DDD;
   }
 
   .instance-header-label {
