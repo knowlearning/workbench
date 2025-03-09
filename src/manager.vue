@@ -89,12 +89,14 @@
     let seenTop = false
     instances.value.forEach(
       (instance, i) => {
-        if (!seenTop && instance.id === id && instance.index === index) {
-          seenTop = true
-          instance.instance.layer = instances.value.length
+        if (!seenTop) {
+          if (instance.id === id && instance.index === index) {
+            seenTop = true
+            instance.instance.layer = instances.value.length
+          }
+          else if (instance.instance.layer !== i) instance.instance.layer = i
         }
-        else if (!seenTop && instance.instance.layer !== i) instance.instance.layer = i
-        else if (seenTop && instance.instance.layer !== i - 1) instance.instance.layer = i - 1
+        else if (instance.instance.layer !== i - 1) instance.instance.layer = i - 1
       }
     )
   }
