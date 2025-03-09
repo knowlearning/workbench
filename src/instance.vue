@@ -9,10 +9,11 @@
     id: String,
     instance: Object,
     index: Number,
+    focused: Number,
     label: String
   })
 
-  const emit = defineEmits(['close'])
+  const emit = defineEmits(['remove', 'bringToTop'])
 
   const handleResize = (corner, dx, dy, instance) => {
     if (corner.includes('right')) {
@@ -46,13 +47,15 @@
 <template>
   <div
     class="instance-wrapper fade-in"
-    :key="id + index"
     :style="{
       left: `${instance.x}px`,
       top: `${instance.y}px`,
       width: `${instance.width}px`,
-      height: `${instance.height}px`
+      height: `${instance.height}px`,
+      zIndex: instance.layer
     }"
+    @mousedown="emit('bringToTop', { id, index })"
+    @touchstart="emit('bringToTop', { id, index })"
   >
     <div
       class="instance-header"
@@ -65,6 +68,8 @@
       <Button
         icon="fa-solid fa-xmark"
         @click="emit('remove', { id, index })"
+        @mousedown.stop
+        @touchstart.stop
       />
       <span class="instance-header-label">
         {{ label }}

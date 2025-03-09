@@ -85,6 +85,20 @@
     content[id].instances = copy
   }
 
+  function bringToTop(id, index) {
+    let seenTop = false
+    instances.value.forEach(
+      (instance, i) => {
+        if (!seenTop && instance.id === id && instance.index === index) {
+          seenTop = true
+          instance.instance.layer = instances.value.length
+        }
+        else if (!seenTop && instance.instance.layer !== i) instance.instance.layer = i
+        else if (seenTop && instance.instance.layer !== i - 1) instance.instance.layer = i - 1
+      }
+    )
+  }
+
 </script>
 
 <template>
@@ -171,7 +185,8 @@
             x: 100,
             y: 100,
             width: 500,
-            height: 500
+            height: 500,
+            layer: instances.length
           })
         }"
       />
@@ -192,6 +207,7 @@
     :key="instance.id + instance.index"
     v-bind="instance"
     @remove="({ id, index }) => removeInstance(id, index)"
+    @bringToTop="({ id, index }) => bringToTop(id, index)"
   />
 </template>
 
