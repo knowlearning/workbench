@@ -47,7 +47,7 @@
 
   async function submit() {
     const object = currentContentId
-    const s = await Agent.state(runStateId)
+    const s = await Agent.state(`run-state/${currentContentId}`)
     const verb = 'http://adlnet.gov/expapi/verbs/submitted'
     s.xapi = {
       verb,
