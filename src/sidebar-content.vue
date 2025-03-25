@@ -10,6 +10,11 @@
     active: Boolean
   })
 
+  const onDragStart = event => {
+    event.dataTransfer.setData('text/plain', props.uuid)
+    event.dataTransfer.effectAllowed = 'move'
+  }
+
 </script>
 
 
@@ -21,7 +26,11 @@
     }"
   >
     <div class="sidebar-content-inner">
-      <div class="sidebar-content-name">
+      <div
+        class="sidebar-content-name"
+        draggable="true"
+        @dragstart="onDragStart"
+      >
         <vueScopeComponent
           :id="props.uuid"
           :path="['name']"
