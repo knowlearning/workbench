@@ -13,5 +13,17 @@ export default defineConfig({
   plugins: [
     vue(),
     basicSsl()
-  ]
+  ],
+  resolve: {
+    alias: [
+      {
+        find: '@knowlearning/editor',
+        replacement: __dirname + '/../platform/packages/editor'
+      },
+      {
+        find: 'fast-json-patch',
+        replacement: __dirname + '/node_modules/fast-json-patch/index.mjs'
+      },
+    ]
+  }
 })

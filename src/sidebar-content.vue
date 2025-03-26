@@ -17,7 +17,6 @@
 
 </script>
 
-
 <template>
   <div
     :class="{
