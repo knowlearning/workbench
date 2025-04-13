@@ -11,7 +11,13 @@ export default defineConfig({
     target: 'esnext'
   },
   plugins: [
-    vue(),
+    vue({
+      template: {
+        compilerOptions: {
+          isCustomElement: tag => tag === 'agent-embed'
+        }
+      }
+    }),
     basicSsl()
   ],
   resolve: {

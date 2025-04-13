@@ -1,7 +1,7 @@
 <script setup>
   import useScreen from './composables/screen.js'
   import Button from './button.vue'
-  import { vueEmbedComponent, vueScopeComponent } from '@knowlearning/agents/vue.js'
+  import { vueScopeComponent } from '@knowlearning/agents/vue.js'
 
   const { width, height } = useScreen()
 
@@ -75,7 +75,7 @@
       </span>
     </div>
     <div class="instance-body">
-      <vueEmbedComponent
+      <agent-embed
         :id="id"
         @close="emit('remove', { id, index })"
       />

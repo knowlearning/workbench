@@ -1,5 +1,4 @@
 import { createApp } from 'vue'
-import './style.css'
 import App from './app.vue'
 import Manager from './manager.vue'
 import Player from './player.vue'
@@ -11,12 +10,14 @@ import drag from './directives/drag.js'
 import focus from './directives/focus.js'
 import hover from './directives/hover.js'
 
+import './agent-embed.js'
+import './style.css'
+
 window.Agent = Agent
 
 const uuid = window.location.pathname.slice(1)
 
 document.addEventListener('gesturestart', e => e.preventDefault())
-
 
 if (uuid) {
   createApp(App, { component: Player, props: { uuid } })

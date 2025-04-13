@@ -1,5 +1,4 @@
 <script setup>
-  import { vueEmbedComponent } from '@knowlearning/agents/vue.js'
   import { watch, reactive, ref, onUnmounted } from 'vue'
   import { useKeyboardEvents } from './composables/keyboard.js'
   import SequenceDashboard from './sequence-dashboard.vue'
@@ -84,7 +83,7 @@
       </button>
     </div>
     <div id="content">
-      <vueEmbedComponent :id="content.items[state.active]" />
+      <agent-embed :id="content.items[state.active]" />
     </div>
     <div id="footer">
       <button @click="submit">submit</button>
