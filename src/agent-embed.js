@@ -101,8 +101,6 @@ class AgentEmbed extends HTMLElement {
 
     this.iframe = iframe
 
-    console.log('SEEEEEEEEEEEEEEETTTTTTTTTTTTTTTING UP!!!!!!!!!!!!!!!!!!', id)
-
     if (isUUID(id)) {
       const { player } = await Agent.state(id)
       const { protocol } = window.location
