@@ -11,7 +11,25 @@ export default defineConfig({
     target: 'esnext'
   },
   plugins: [
-    vue(),
+    vue({
+      template: {
+        compilerOptions: {
+          isCustomElement: tag => tag === 'agent-embed'
+        }
+      }
+    }),
     basicSsl()
-  ]
+  ],
+  resolve: {
+    alias: [
+      {
+        find: '@knowlearning/editor',
+        replacement: __dirname + '/../platform/packages/editor'
+      },
+      {
+        find: 'fast-json-patch',
+        replacement: __dirname + '/node_modules/fast-json-patch/index.mjs'
+      },
+    ]
+  }
 })
