@@ -36,10 +36,6 @@ class AgentEmbed extends HTMLElement {
     this.propId = value
   }
 
-  get mode() {
-    return this.getAttribute('mode')
-  }
-
   get path() {
     return this._path || []
   }
@@ -55,6 +51,7 @@ class AgentEmbed extends HTMLElement {
 
   set namespace(value) {
     this._namespace = value
+    this.startWatching()
   }
 
   get environmentProxy() {
@@ -89,10 +86,10 @@ class AgentEmbed extends HTMLElement {
     iframe.setAttribute('allow', 'camera;microphone')
 
     this.appendChild(iframe)
-    this.setup(iframe, this.resolvedId, this.mode, this.namespace)
+    this.setup(iframe, this.resolvedId, this.namespace)
   }
 
-  async setup(iframe, id, mode, namespace) {
+  async setup(iframe, id, namespace) {
     if (!iframe || this.iframe === iframe) return
 
     let setupId = Agent.uuid()
@@ -108,7 +105,7 @@ class AgentEmbed extends HTMLElement {
 
     if (setupId != this.setupId) return
 
-    this.embedding = Agent.embed({ id, mode, namespace }, iframe)
+    this.embedding = Agent.embed({ id, namespace }, iframe)
 
     this
       .embedding

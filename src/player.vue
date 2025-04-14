@@ -83,7 +83,9 @@
       </button>
     </div>
     <div id="content">
-      <agent-embed :id="content.items[state.active]" />
+      <agent-embed
+        :id="content.items[state.active]"
+      />
     </div>
     <div id="footer">
       <button @click="submit">submit</button>

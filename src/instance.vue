@@ -1,9 +1,14 @@
 <script setup>
+  import { ref, reactive } from 'vue'
   import useScreen from './composables/screen.js'
   import Button from './button.vue'
   import { vueScopeComponent } from '@knowlearning/agents/vue.js'
 
   const { width, height } = useScreen()
+
+  const currentNamespace = ref(null)
+  const newNamespace = ref(undefined)
+  const availableNamespaces = reactive([])
 
   defineProps({
     id: String,
@@ -41,6 +46,13 @@
     }
   }
 
+  function handleNewNamespace(e) {
+    currentNamespace.value= e.target.value || null
+    if (currentNamespace.value && !availableNamespaces.includes(currentNamespace.value)) {
+      availableNamespaces.push(currentNamespace.value)
+    }
+  }
+
 </script>
 
 <template>
@@ -73,10 +85,36 @@
       <span class="instance-header-label">
         <vueScopeComponent :id="id" :path="['name']"  />
       </span>
+      <span>
+        <input
+          v-if="currentNamespace === undefined"
+          type="text"
+          v-model="newNamepace"
+          focus
+          @blur="handleNewNamespace"
+          @keypress.enter="handleNewNamespace"
+        />
+        <select
+          v-else
+          v-model="currentNamespace"
+        >
+          <option :value="null">no namespace</option>
+          <option
+            v-for="namespace in availableNamespaces"
+            :key="namespace"
+          >
+            {{ namespace }}
+          </option>
+          <option :value="undefined">
+            New Namespace
+          </option>
+        </select>
+      </span>
     </div>
     <div class="instance-body">
       <agent-embed
         :id="id"
+        :namespace="currentNamespace"
         @close="emit('remove', { id, index })"
       />
     </div>
