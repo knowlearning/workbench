@@ -8,7 +8,6 @@ class AgentEmbed extends HTMLElement {
 
   constructor() {
     super()
-    this.attachShadow({ mode: 'open' })
     this.iframe = null
     this.resolvedId = null
     this.embedding = null
@@ -81,7 +80,7 @@ class AgentEmbed extends HTMLElement {
 
   render() {
     if (!this.resolvedId) return
-    this.shadowRoot.innerHTML = ''
+    this.innerHTML = ''
 
     const iframe = document.createElement('iframe')
     iframe.style.width = '100%'
@@ -89,7 +88,7 @@ class AgentEmbed extends HTMLElement {
     iframe.style.border = 'none'
     iframe.setAttribute('allow', 'camera;microphone')
 
-    this.shadowRoot.appendChild(iframe)
+    this.appendChild(iframe)
     this.setup(iframe, this.resolvedId, this.mode, this.namespace)
   }
 
