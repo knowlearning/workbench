@@ -85,7 +85,9 @@
       <span class="instance-header-label">
         <vueScopeComponent :id="id" :path="['name']"  />
       </span>
-      <span>
+      <span
+        @mousedown.stop
+      >
         <input
           v-if="currentNamespace === undefined"
           type="text"
