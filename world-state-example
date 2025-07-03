@@ -1,0 +1,71 @@
+height: 100
+parts:
+    monkey:
+        uncollide: |
+            console.log('uncollide!', event)
+        x: 35.352472328254734
+        y: 56.19666524085372
+        width: 32.56786199348793
+        height: 43.47211834503395
+        angle: -49.5982526323069
+        parts:
+            banana:
+                sprite: b01cd330-e3f0-11ef-8ed9-3f2b056b94c4
+                x: 25.39804734214179
+                y: 1.7439020206315918
+                width: 15.182733559695262
+                height: 15.182733559695262
+                angle: 45
+        drag: |
+            this.x += event.dx
+            this.y += event.dy
+        dragstart: |
+            this.static = true
+        dragstop: |
+            this.static = false
+        collide: |
+            console.log('collide!', event)
+        sprite: ac3586e0-e3f0-11ef-8ed9-3f2b056b94c4
+    logo2:
+        sprite: d0458d50-e3f0-11ef-8ed9-3f2b056b94c4
+        x: -25.587993839340488
+        y: 96.76431072454376
+        width: 53.45949368925062
+        height: 59.77068391645382
+        angle: -90.78998367375095
+        static: true
+    logo1:
+        sprite: d0458d50-e3f0-11ef-8ed9-3f2b056b94c4
+        x: 117.3101638308384
+        y: 228.1792474445055
+        width: 235.23723089398064
+        height: 263.00829287452
+        angle: -180.3329529421573
+        static: true
+    item1:
+        sprite: e4639450-e407-11ef-8e9e-7340506224cd
+        x: 76.09156184716412
+        y: 75.05535328861058
+        width: 21.233211695578376
+        height: 21.233211695578376
+        angle: -1.424016798110629
+    item2:
+        sprite: e4639450-e407-11ef-8e9e-7340506224cd
+        x: 69.77203475930702
+        y: 30.067983582215696
+        width: 13.531983367994048
+        height: 13.531983367994048
+        angle: -0.2573995326526458
+        click: alert('Ouch!')
+    item3:
+        sprite: e4639450-e407-11ef-8e9e-7340506224cd
+        x: 40.18405605842713
+        y: 93.3287309723694
+        width: 8.681473632199248
+        height: 8.681473632199248
+        angle: -1.3806380344027365
+        click: alert('Ouch!')
+x: 0
+y: 0
+width: 100
+angle: 100
