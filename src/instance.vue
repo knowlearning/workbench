@@ -7,10 +7,16 @@
   const { width, height } = useScreen()
 
   const currentNamespace = ref(null)
+  const lastRefresh= ref(null)
   const newNamespace = ref(undefined)
   const availableNamespaces = reactive([])
+  const refresh = async () => {
+    const state = await Agent.state('run-state/' + props.id)
+    Object.keys(state).forEach(key => delete state[key])
+    lastRefresh.value = Date.now()
+  }
 
-  defineProps({
+  const props = defineProps({
     id: String,
     instance: Object,
     index: Number,
@@ -111,11 +117,13 @@
             New Namespace
           </option>
         </select>
+        <button @click="refresh">refresh</button>
       </span>
     </div>
     <div class="instance-body">
       <agent-embed
         :id="id"
+        :key="lastRefresh"
         :namespace="currentNamespace"
         @close="emit('remove', { id, index })"
       />
