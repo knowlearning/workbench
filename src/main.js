@@ -15,12 +15,12 @@ import './style.css'
 
 window.Agent = Agent
 
-const uuid = window.location.pathname.slice(1)
+const id = window.location.pathname.slice(1)
 
 document.addEventListener('gesturestart', e => e.preventDefault())
 
-if (uuid) {
-  createApp(App, { component: Player, props: { uuid } })
+if (id) {
+  createApp(App, { component: Player, props: { id } })
     .directive('focus', focus)
     .directive('drag', drag)
     .directive('hover', hover)

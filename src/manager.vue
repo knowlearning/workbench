@@ -4,6 +4,7 @@
   import Editor from '@knowlearning/editor/editor.vue'
   import Instance from './instance.vue'
   import SidebarContent from './sidebar-content.vue'
+  import TestWidget from './test-widget.vue'
 
   const ui = reactive(await Agent.state('ui'))
   const content = reactive(await Agent.state('content'))
@@ -102,6 +103,14 @@
     )
   }
 
+  function resolveWidget(path) {
+    if (path[0] === 'testBlock') return {
+      component: TestWidget,
+      props: {}
+    }
+    return undefined
+  }
+
 </script>
 
 <template>
@@ -171,8 +180,10 @@
         v-if="activeContent"
         :key="activeContent"
         :id="activeContent"
-        :resolveLanguage="path => {}"
-        :resolveWidget="path => {}"
+        :resolveLanguage="path => {
+          if (path[path.length-1] === 'javascript') return 'javascript'
+        }"
+        :resolveWidget="resolveWidget"
         fill-height
       />
     </div>

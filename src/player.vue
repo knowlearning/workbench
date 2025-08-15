@@ -6,23 +6,14 @@
 
   const state = reactive(await Agent.state(`run-state/${id}`))
 
-  async function increment() {
-    const update = await execute(
-      JSON.parse(JSON.stringify(state)),
-      `
-        if (!context.count) context.count = 0
-        context.count += 1
-      `
-    )
-    Object.assign(state, update)
+  if (!state.initialized) {
+    state.current = JSON.parse(JSON.stringify(await Agent.state(id)))
+    state.initialized = true
   }
 </script>
 
 <template>
-  <div>
-    {{ state.count }}
-    <button @click="increment">++</button>
-  </div>
+  <pre>{{id}} {{ state }}</pre>
 </template>
 
 <style scoped>
