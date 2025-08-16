@@ -73,18 +73,23 @@
     ctx.scale(dpr, dpr)
     draw()
   })
-  function drag({ detail: { clientX, clientY, dx, dy } }) {
-    console.log('moving....')
+
+  async function drag({ detail: { clientX:x, clientY:y, dx, dy } }) {
     const shapes = findShapes(state.current)
     let updated = false
 
     for (const shape of shapes) {
-      if (shape.drag && isPointInsideShape(shape, clientX-dx, clientY-dy)) {
-        //  TODO: execute the drag function in the rectangle...
-        //        also, start dragging on dragstart
-        shape.position[0] += dx
-        shape.position[1] += dy
+      if (shape.drag && isPointInsideShape(shape, x-dx, y-dy)) {
+        //  TODO: "this" reference should be a proxy in the the execute context so that
+        //        we can get parent and such from shape...
+        //  TODO: should look through parents for drag handlers, and object will be that parent
         updated = true
+        const context = {
+          object: JSON.parse(JSON.stringify(shape)),
+          event: { x, y, dx, dy }
+        }
+        const result = await execute(context, shape.drag)
+        Object.assign(shape, result.object)
       }
     }
 

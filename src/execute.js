@@ -22,8 +22,8 @@ function jobQueueWorker(queue) {
 
       try {
         const copy = structuredClone(context)
-        const fn = new Function("context", \`"use strict"; \${code}\`)
-        await fn(copy)
+        const fn = new Function(Object.keys(context), \`"use strict"; \${code}\`)
+        await fn(...Object.values(copy))
         self.postMessage({ jobId, result: structuredClone(copy) })
       } catch (err) {
         self.postMessage({ jobId, error: String(err) })
