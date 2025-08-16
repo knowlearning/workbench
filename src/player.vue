@@ -12,23 +12,21 @@
     state.initialized = true
   }
 
+  const isShape = obj => (
+    Array.isArray(obj.path) &&
+    Array.isArray(obj.position) &&
+    typeof obj.angle === "number"
+  )
 
-  function findRectangles(obj, results = []) {
+  function findShapes(obj, results = []) {
     if (obj && typeof obj === "object") {
       if (Array.isArray(obj)) {
-        for (const item of obj) findRectangles(item, results)
+        for (const item of obj) findShapes(item, results)
       } else {
-        if (
-          typeof obj.width === "number" &&
-          typeof obj.height === "number" &&
-          typeof obj.top === "number" &&
-          typeof obj.left === "number"
-        ) {
-          results.push(obj)
-        }
+        if (isShape(obj)) results.push(obj)
         for (const key in obj) {
           if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            findRectangles(obj[key], results)
+            findShapes(obj[key], results)
           }
         }
       }
@@ -36,46 +34,56 @@
     return results
   }
 
-  function drawRectangles(ctx, rectangles) {
-    rectangles.forEach((rect) => {
-      ctx.save()
-      const angleRad = rect.angle ? rect.angle * Math.PI / 180 : 0
+  function drawShape(ctx, shape) {
+    ctx.strokeStyle = "black"
+    ctx.lineWidth = 1
+    const { path, position, angle } = shape
+    ctx.save()
 
-      const centerX = rect.left + rect.width / 2
-      const centerY = rect.top + rect.height / 2
+    ctx.translate(position[0], position[1])
+    ctx.rotate((angle * Math.PI) / 180)
 
-      ctx.translate(centerX, centerY)
-      ctx.rotate(angleRad)
-      ctx.fillStyle = rect.color || "rgba(0, 150, 255, 0.4)"
-      ctx.strokeStyle = rect.stroke || "black"
-      ctx.lineWidth = 2
+    ctx.beginPath()
+    for (let i = 0; i < path.length; i++) {
+      const [x, y] = path[i]
+      if (i === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+    }
+    ctx.closePath()
+    ctx.stroke()
 
-      ctx.fillRect(-rect.width / 2, -rect.height / 2, rect.width, rect.height)
-      ctx.strokeRect(-rect.width / 2, -rect.height / 2, rect.width, rect.height)
-      ctx.restore()
-    });
+    ctx.restore()
   }
 
   function draw() {
     const ctx = canvas.value.getContext("2d")
     ctx.clearRect(0, 0, 512, 512)
 
-    const rectangles = findRectangles(state.current)
-    drawRectangles(ctx, rectangles)
+    findShapes(state.current)
+      .forEach(shape => drawShape(ctx, shape))
   }
 
-  onMounted(draw)
-
+  onMounted(() => {
+    const ctx = canvas.value.getContext("2d")
+    const dpr = window.devicePixelRatio || 1
+    canvas.value.width = 512 * dpr
+    canvas.value.height = 512 * dpr
+    canvas.value.style.width = "512px"
+    canvas.value.style.height = "512px"
+    ctx.scale(dpr, dpr)
+    draw()
+  })
   function drag({ detail: { clientX, clientY, dx, dy } }) {
     console.log('moving....')
-    const rectangles = findRectangles(state.current)
+    const shapes = findShapes(state.current)
     let updated = false
 
-    for (const rect of rectangles) {
-      if (rect.drag && isPointInsideRect(clientX-dx, clientY-dy, rect)) {
+    for (const shape of shapes) {
+      if (shape.drag && isPointInsideShape(shape, clientX-dx, clientY-dy)) {
         //  TODO: execute the drag function in the rectangle...
         //        also, start dragging on dragstart
-        moveRectangle(rect, dx, dy)
+        shape.position[0] += dx
+        shape.position[1] += dy
         updated = true
       }
     }
@@ -83,14 +91,32 @@
     if (updated) draw()
   }
 
-  function isPointInsideRect(x, y, { left, top, width, height }) {
-    return x >= left && x <= left + width && y >= top && y <= top + height
+  function isPointInsideShape(shape, px, py) {
+    const { path, position, angle } = shape
+    const rad = (angle * Math.PI) / 180
+
+    let x = px - position[0]
+    let y = py - position[1]
+
+    const localX = x * Math.cos(-rad) - y * Math.sin(-rad)
+    const localY = x * Math.sin(-rad) + y * Math.cos(-rad)
+
+    let inside = false
+    for (let i = 0, j = path.length - 1; i < path.length; j = i++) {
+      const xi = path[i][0], yi = path[i][1]
+      const xj = path[j][0], yj = path[j][1]
+
+      const intersect = (
+        yi > localY !== yj > localY &&
+        localX < ((xj - xi) * (localY - yi)) / (yj - yi) + xi
+      )
+
+      if (intersect) inside = !inside
+    }
+
+    return inside
   }
 
-  function moveRectangle(rect, dx, dy) {
-    rect.left += dx
-    rect.top += dy
-  }
 </script>
 
 <template>
