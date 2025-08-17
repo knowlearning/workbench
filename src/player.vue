@@ -12,23 +12,23 @@
     state.initialized = true
   }
 
-  const isShape = obj => (
-    Array.isArray(obj.path) &&
-    Array.isArray(obj.position) &&
-    typeof obj.angle === "number"
+  const isShape = object => (
+    Array.isArray(object.path) &&
+    Array.isArray(object.position) &&
+    typeof object.angle === "number"
   )
 
-  function findPaths(obj, test, paths=[], path=[]) {
-    if (obj && typeof obj === "object") {
-      if (Array.isArray(obj)) {
-        for (const [key, item] in obj) {
+  function findPaths(object, test, paths=[], path=[]) {
+    if (object && typeof object === "object") {
+      if (Array.isArray(object)) {
+        object.forEach((item, key) => {
           findPaths(item, test, paths, [...path, key])
-        }
+        })
       } else {
-        if (test(obj)) paths.unshift(path)
-        for (const key in obj) {
-          if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            findPaths(obj[key], test, paths, [...path, key])
+        if (test(object, path)) paths.unshift(path)
+        for (const key in object) {
+          if (Object.prototype.hasOwnProperty.call(object, key)) {
+            findPaths(object[key], test, paths, [...path, key])
           }
         }
       }
@@ -36,23 +36,38 @@
     return paths
   }
 
-  function drawShape(ctx, shape) {
-    ctx.strokeStyle = "black"
-    ctx.lineWidth = 1
-    const { path, position, angle } = shape
+  function drawShapeAtPath(ctx, path) {
     ctx.save()
 
-    ctx.translate(position[0], position[1])
-    ctx.rotate((angle * Math.PI) / 180)
+    let node = state.current
 
-    ctx.beginPath()
-    for (let i = 0; i < path.length; i++) {
-      const [x, y] = path[i]
-      if (i === 0) ctx.moveTo(x, y)
-      else ctx.lineTo(x, y)
+    if (isShape(node)) {
+      ctx.translate(node.position[0], node.position[1])
+      ctx.rotate((node.angle * Math.PI) / 180)
     }
-    ctx.closePath()
-    ctx.stroke()
+
+    for (const key of path) {
+      node = node[key]
+      if (!node) break
+
+      if (isShape(node)) {
+        ctx.translate(node.position[0], node.position[1])
+        ctx.rotate((node.angle * Math.PI) / 180)
+      }
+    }
+
+    if (node && node.path) {
+      ctx.strokeStyle = "black"
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      for (let i = 0; i < node.path.length; i++) {
+        const [x, y] = node.path[i]
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.closePath()
+      ctx.stroke()
+    }
 
     ctx.restore()
   }
@@ -62,10 +77,7 @@
     ctx.clearRect(0, 0, 512, 512)
 
     findPaths(state.current, isShape)
-      .forEach(path => {
-        const shape = resolvePath(path, state.current)
-        drawShape(ctx, shape)
-      })
+      .forEach(path => drawShapeAtPath(ctx, path))
   }
 
   onMounted(() => {
