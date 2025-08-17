@@ -18,17 +18,17 @@
     typeof obj.angle === "number"
   )
 
-  function findShapes(obj, paths=[], path=[]) {
+  function findPaths(obj, test, paths=[], path=[]) {
     if (obj && typeof obj === "object") {
       if (Array.isArray(obj)) {
         for (const [key, item] in obj) {
-          findShapes(item, paths, [...path, key])
+          findPaths(item, test, paths, [...path, key])
         }
       } else {
-        if (isShape(obj)) paths.push(path)
+        if (test(obj)) paths.unshift(path)
         for (const key in obj) {
           if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            findShapes(obj[key], paths, [...path, key])
+            findPaths(obj[key], test, paths, [...path, key])
           }
         }
       }
@@ -61,7 +61,7 @@
     const ctx = canvas.value.getContext("2d")
     ctx.clearRect(0, 0, 512, 512)
 
-    findShapes(state.current)
+    findPaths(state.current, isShape)
       .forEach(path => {
         const shape = resolvePath(path, state.current)
         drawShape(ctx, shape)
@@ -83,7 +83,7 @@
   async function applyInteractionScript(scriptName, event) {
     const { detail: { clientX:x, clientY:y, dx, dy } } = event
     lastInteractionRun = lastInteractionRun.then(async () => {
-      const paths = findShapes(state.current)
+      const paths = findPaths(state.current, isShape)
 
       for (const path of paths) {
         const shape = resolvePath(path, state.current)
