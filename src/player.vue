@@ -18,20 +18,22 @@
     typeof obj.angle === "number"
   )
 
-  function findShapes(obj, results = []) {
+  function findShapes(obj, paths=[], path=[]) {
     if (obj && typeof obj === "object") {
       if (Array.isArray(obj)) {
-        for (const item of obj) findShapes(item, results)
+        for (const [key, item] in obj) {
+          findShapes(item, paths, [...path, key])
+        }
       } else {
-        if (isShape(obj)) results.push(obj)
+        if (isShape(obj)) paths.push(path)
         for (const key in obj) {
           if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            findShapes(obj[key], results)
+            findShapes(obj[key], paths, [...path, key])
           }
         }
       }
     }
-    return results
+    return paths
   }
 
   function drawShape(ctx, shape) {
@@ -60,7 +62,10 @@
     ctx.clearRect(0, 0, 512, 512)
 
     findShapes(state.current)
-      .forEach(shape => drawShape(ctx, shape))
+      .forEach(path => {
+        const shape = resolvePath(path, state.current)
+        drawShape(ctx, shape)
+      })
   }
 
   onMounted(() => {
@@ -74,26 +79,40 @@
     draw()
   })
 
-  async function drag({ detail: { clientX:x, clientY:y, dx, dy } }) {
-    const shapes = findShapes(state.current)
-    let updated = false
+  let lastInteractionRun = Promise.resolve()
+  async function applyInteractionScript(scriptName, event) {
+    const { detail: { clientX:x, clientY:y, dx, dy } } = event
+    lastInteractionRun = lastInteractionRun.then(async () => {
+      const paths = findShapes(state.current)
 
-    for (const shape of shapes) {
-      if (shape.drag && isPointInsideShape(shape, x-dx, y-dy)) {
-        //  TODO: "this" reference should be a proxy in the the execute context so that
-        //        we can get parent and such from shape...
-        //  TODO: should look through parents for drag handlers, and object will be that parent
-        updated = true
+      for (const path of paths) {
+        const shape = resolvePath(path, state.current)
+        if (!shape || !shape[scriptName] || !isPointInsideShape(shape, x - dx, y - dy)) continue
+
         const context = {
           object: JSON.parse(JSON.stringify(shape)),
           event: { x, y, dx, dy }
         }
-        const result = await execute(context, shape.drag)
-        Object.assign(shape, result.object)
+
+        const result = await execute(context, shape[scriptName])
+        //  TODO: apply updates instead of full re-writes
+        Object
+          .entries(result.object)
+          .forEach(([key, value]) => {
+            shape[key] = value
+          })
       }
+
+      if (paths.length) draw()
+    })
+  }
+
+  function resolvePath(path, value) {
+    if (path[0] && value !== undefined) {
+      return resolvePath(path.slice(1), value[path[0]])
     }
 
-    if (updated) draw()
+    return value
   }
 
   function isPointInsideShape(shape, px, py) {
@@ -127,7 +146,9 @@
 <template>
   <canvas
     v-drag
-    @drag="drag"
+    @dragstart="event => applyInteractionScript('touch', event)"
+    @drag="event => applyInteractionScript('drag', event)"
+    @dragend="event => applyInteractionScript('untouch', event)"
     ref="canvas"
     :width="512"
     :height="512"
