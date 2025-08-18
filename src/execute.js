@@ -1,3 +1,5 @@
+import PlayerWorker from './player-worker.js?worker'
+
 const WORKER_JOB_TIMEOUT = 1000
 
 const workers = {}
@@ -5,34 +7,7 @@ const workers = {}
 function jobQueueWorker(queue) {
   if (workers[queue]) return workers[queue]
 
-  const worker = workers[queue] = new Worker(URL.createObjectURL(new Blob([`
-    const queue = []
-    let busy = false
-
-    self.onmessage = ({ data }) => {
-      queue.push(data)
-      processQueue()
-    }
-
-    async function processQueue() {
-      if (busy || queue.length === 0) return
-      busy = true
-
-      const { jobId, context, code } = queue.shift()
-
-      try {
-        const copy = structuredClone(context)
-        const fn = new Function(Object.keys(context), \`"use strict"; \${code}\`)
-        await fn(...Object.values(copy))
-        self.postMessage({ jobId, result: structuredClone(copy) })
-      } catch (err) {
-        self.postMessage({ jobId, error: String(err) })
-      } finally {
-        busy = false
-        processQueue()
-      }
-    }
-  `], { type: "application/javascript" })))
+  const worker = workers[queue] = new PlayerWorker()
 
   let jobCounter = 0
   const pending = new Map()
