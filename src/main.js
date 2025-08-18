@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import App from './app.vue'
 import Manager from './manager.vue'
-import Player from './player.vue'
+import Player from './player/index.vue'
 import Agent from '@knowlearning/agents'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { faPencil, faEllipsis, faUpload, faXmark, faGlobe, faPlay, faPause, faAnchor, faBars } from '@fortawesome/free-solid-svg-icons'

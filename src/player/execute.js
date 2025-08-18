@@ -1,4 +1,4 @@
-import PlayerWorker from './player-worker.js?worker'
+import PlayerWorker from './worker.js?worker'
 
 const WORKER_JOB_TIMEOUT = 1000
 

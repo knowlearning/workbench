@@ -1,9 +1,9 @@
 <script setup>
   import { reactive, ref, onMounted } from 'vue'
   import execute from './execute.js'
-  import drawArrow from './draw/arrow.js'
-  import drawPath from './draw/path.js'
-  import isShape from './is-shape.js'
+  import drawArrow from '../draw/arrow.js'
+  import drawPath from '../draw/path.js'
+  import isShape from '../is-shape.js'
 
   const { id } = defineProps({ id: String })
 
