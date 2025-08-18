@@ -2,7 +2,8 @@
   import { reactive, ref, onMounted } from 'vue'
   import execute from './execute.js'
   import drawArrow from '../draw/arrow.js'
-  import drawPath from '../draw/path.js'
+  import drawObject from '../draw/object.js'
+  import { load as loadSprite } from './sprites.js'
   import isShape from '../is-shape.js'
 
   const { id } = defineProps({ id: String })
@@ -45,7 +46,7 @@
 
         const paths = findPaths(state.current, isShape)
 
-        paths.forEach(path => drawPath(ctx, state.current, path))
+        paths.forEach(path => drawObject(ctx, state.current, path))
 
         ctx.strokeStyle = "rgba(0, 0, 255, 0.5)" // blue, 50% opacity
         ctx.lineWidth = 1
@@ -61,7 +62,7 @@
     }
   }
 
-  onMounted(() => {
+  onMounted(async () => {
     const ctx = canvas.value.getContext("2d")
     const dpr = window.devicePixelRatio || 1
     canvas.value.width = 512 * dpr
@@ -69,6 +70,13 @@
     canvas.value.style.width = "512px"
     canvas.value.style.height = "512px"
     ctx.scale(dpr, dpr)
+    await Promise.all(
+      findPaths(state.current, isShape)
+        .map(async path => {
+          const node = resolvePath(path, state.current)
+          if (node.sprite?.sheet) await loadSprite(node.sprite.sheet)
+        })
+    )
     draw()
   })
 
