@@ -2,6 +2,8 @@
   import { reactive, ref, onMounted } from 'vue'
   import execute from './execute.js'
   import drawArrow from './draw/arrow.js'
+  import drawPath from './draw/path.js'
+  import isShape from './is-shape.js'
 
   const { id } = defineProps({ id: String })
 
@@ -12,12 +14,6 @@
     state.current = JSON.parse(JSON.stringify(await Agent.state(id)))
     state.initialized = true
   }
-
-  const isShape = object => (
-    Array.isArray(object.path) &&
-    Array.isArray(object.position) &&
-    typeof object.angle === "number"
-  )
 
   function findPaths(object, test, paths=[], path=[]) {
     if (object && typeof object === "object") {
@@ -37,42 +33,6 @@
     return paths
   }
 
-  function drawShapeAtPath(ctx, path) {
-    ctx.save()
-
-    let node = state.current
-
-    if (isShape(node)) {
-      ctx.translate(node.position[0], node.position[1])
-      ctx.rotate((node.angle * Math.PI) / 180)
-    }
-
-    for (const key of path) {
-      node = node[key]
-      if (!node) break
-
-      if (isShape(node)) {
-        ctx.translate(node.position[0], node.position[1])
-        ctx.rotate((node.angle * Math.PI) / 180)
-      }
-    }
-
-    if (node && node.path) {
-      ctx.strokeStyle = "black"
-      ctx.lineWidth = 1
-      ctx.beginPath()
-      for (let i = 0; i < node.path.length; i++) {
-        const [x, y] = node.path[i]
-        if (i === 0) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
-      }
-      ctx.closePath()
-      ctx.stroke()
-    }
-
-    ctx.restore()
-  }
-
   let drawScheduled = false
   function draw() {
     if (!drawScheduled) {
@@ -85,7 +45,7 @@
 
         const paths = findPaths(state.current, isShape)
 
-        paths.forEach(path => drawShapeAtPath(ctx, path))
+        paths.forEach(path => drawPath(ctx, state.current, path))
 
         ctx.strokeStyle = "rgba(0, 0, 255, 0.5)" // blue, 50% opacity
         ctx.lineWidth = 1
