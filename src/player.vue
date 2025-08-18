@@ -72,24 +72,32 @@
     ctx.restore()
   }
 
+  let drawScheduled = false
   function draw() {
-    const ctx = canvas.value.getContext("2d")
-    ctx.clearRect(0, 0, 512, 512)
+    if (!drawScheduled) {
+      drawScheduled = true
+      requestAnimationFrame(() => {
+        drawScheduled = false
 
-    const paths = findPaths(state.current, isShape)
+        const ctx = canvas.value.getContext("2d")
+        ctx.clearRect(0, 0, 512, 512)
 
-    paths.forEach(path => drawShapeAtPath(ctx, path))
+        const paths = findPaths(state.current, isShape)
 
-    ctx.strokeStyle = "rgba(0, 0, 255, 0.5)" // blue, 50% opacity
-    ctx.lineWidth = 1
-    paths.forEach(path => {
-      if (path.length > 0) {
-        const parentPath = path.slice(0, -1)
-        const parentPos = getWorldPosition(parentPath, state.current)
-        const childPos  = getWorldPosition(path, state.current)
-        drawArrow(ctx, parentPos, childPos)
-      }
-    })
+        paths.forEach(path => drawShapeAtPath(ctx, path))
+
+        ctx.strokeStyle = "rgba(0, 0, 255, 0.5)" // blue, 50% opacity
+        ctx.lineWidth = 1
+        paths.forEach(path => {
+          if (path.length > 0) {
+            const parentPath = path.slice(0, -1)
+            const parentPos = getWorldPosition(parentPath, state.current)
+            const childPos  = getWorldPosition(path, state.current)
+            drawArrow(ctx, parentPos, childPos)
+          }
+        })
+      })
+    }
   }
 
   onMounted(() => {
