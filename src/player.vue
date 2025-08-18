@@ -1,6 +1,7 @@
 <script setup>
   import { reactive, ref, onMounted } from 'vue'
   import execute from './execute.js'
+  import drawArrow from './draw/arrow.js'
 
   const { id } = defineProps({ id: String })
 
@@ -276,33 +277,6 @@
   function getWorldPosition(path, root) {
     const m = computeTransformToNode(path, root)
     return [m[2], m[5]] // translation part of the matrix
-  }
-
-  function drawArrow(ctx, from, to, headlen = 5) {
-    const [x1, y1] = from
-    const [x2, y2] = to
-
-    const angle = Math.atan2(y2 - y1, x2 - x1)
-
-    // main line
-    ctx.beginPath()
-    ctx.moveTo(x1, y1)
-    ctx.lineTo(x2, y2)
-    ctx.stroke()
-
-    // arrowhead lines
-    ctx.beginPath()
-    ctx.moveTo(x2, y2)
-    ctx.lineTo(
-      x2 - headlen * Math.cos(angle - Math.PI / 6),
-      y2 - headlen * Math.sin(angle - Math.PI / 6)
-    )
-    ctx.moveTo(x2, y2)
-    ctx.lineTo(
-      x2 - headlen * Math.cos(angle + Math.PI / 6),
-      y2 - headlen * Math.sin(angle + Math.PI / 6)
-    )
-    ctx.stroke()
   }
 
 </script>
