@@ -76,8 +76,20 @@
     const ctx = canvas.value.getContext("2d")
     ctx.clearRect(0, 0, 512, 512)
 
-    findPaths(state.current, isShape)
-      .forEach(path => drawShapeAtPath(ctx, path))
+    const paths = findPaths(state.current, isShape)
+
+    paths.forEach(path => drawShapeAtPath(ctx, path))
+
+    ctx.strokeStyle = "rgba(0, 0, 255, 0.5)" // blue, 50% opacity
+    ctx.lineWidth = 1
+    paths.forEach(path => {
+      if (path.length > 0) {
+        const parentPath = path.slice(0, -1)
+        const parentPos = getWorldPosition(parentPath, state.current)
+        const childPos  = getWorldPosition(path, state.current)
+        drawArrow(ctx, parentPos, childPos)
+      }
+    })
   }
 
   onMounted(() => {
@@ -253,6 +265,37 @@
     return { x: px, y: py, dx: px2 - px, dy: py2 - py }
   }
 
+  function getWorldPosition(path, root) {
+    const m = computeTransformToNode(path, root)
+    return [m[2], m[5]] // translation part of the matrix
+  }
+
+  function drawArrow(ctx, from, to, headlen = 5) {
+    const [x1, y1] = from
+    const [x2, y2] = to
+
+    const angle = Math.atan2(y2 - y1, x2 - x1)
+
+    // main line
+    ctx.beginPath()
+    ctx.moveTo(x1, y1)
+    ctx.lineTo(x2, y2)
+    ctx.stroke()
+
+    // arrowhead lines
+    ctx.beginPath()
+    ctx.moveTo(x2, y2)
+    ctx.lineTo(
+      x2 - headlen * Math.cos(angle - Math.PI / 6),
+      y2 - headlen * Math.sin(angle - Math.PI / 6)
+    )
+    ctx.moveTo(x2, y2)
+    ctx.lineTo(
+      x2 - headlen * Math.cos(angle + Math.PI / 6),
+      y2 - headlen * Math.sin(angle + Math.PI / 6)
+    )
+    ctx.stroke()
+  }
 
 </script>
 
