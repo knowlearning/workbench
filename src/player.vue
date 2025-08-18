@@ -99,7 +99,7 @@
 
       for (const path of paths) {
         const shape = resolvePath(path, state.current)
-        if (!shape || !shape[scriptName] || !isPointInsideShape(shape, x - dx, y - dy)) continue
+        if (!shape || !shape[scriptName] || !isPointInsideShapeWithParents(path, state.current, x - dx, y - dy)) continue
 
         const context = {
           object: JSON.parse(JSON.stringify(shape)),
@@ -128,30 +128,53 @@
   }
 
   function isPointInsideShape(shape, px, py) {
-    const { path, position, angle } = shape
-    const rad = (angle * Math.PI) / 180
-
-    let x = px - position[0]
-    let y = py - position[1]
-
-    const localX = x * Math.cos(-rad) - y * Math.sin(-rad)
-    const localY = x * Math.sin(-rad) + y * Math.cos(-rad)
-
+    const { path } = shape
     let inside = false
     for (let i = 0, j = path.length - 1; i < path.length; j = i++) {
       const xi = path[i][0], yi = path[i][1]
       const xj = path[j][0], yj = path[j][1]
-
+ 
       const intersect = (
-        yi > localY !== yj > localY &&
-        localX < ((xj - xi) * (localY - yi)) / (yj - yi) + xi
+        yi > py !== yj > py &&
+        px < ((xj - xi) * (py - yi)) / (yj - yi) + xi
       )
-
+ 
       if (intersect) inside = !inside
     }
-
     return inside
   }
+
+  function isPointInsideShapeWithParents(path, root, px, py) {
+    // accumulate transforms from root through the path
+    let node = root
+    let transforms = []
+
+    if (isShape(node)) transforms.push(node)
+
+    for (const key of path) {
+      node = node[key]
+      if (!node) break
+      if (isShape(node)) transforms.push(node)
+    }
+
+    // walk transforms backwards: convert global point into local space
+    let x = px
+    let y = py
+    for (let i = 0; i < transforms.length; i++) {
+      const { position, angle } = transforms[i]
+      const rad = (angle * Math.PI) / 180
+      x -= position[0]
+      y -= position[1]
+      const lx = x * Math.cos(-rad) - y * Math.sin(-rad)
+      const ly = x * Math.sin(-rad) + y * Math.cos(-rad)
+      x = lx
+      y = ly
+    }
+
+    const shape = transforms[transforms.length - 1]
+    return isPointInsideShape(shape, x, y)
+  }
+
 
 </script>
 
