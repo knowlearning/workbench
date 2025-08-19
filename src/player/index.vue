@@ -32,7 +32,21 @@
         })
     )
     draw(canvas.value, state.current)
+    toggleSpriteFrames()
   })
+
+  function toggleSpriteFrames() {
+    findPaths(state.current, isShape)
+      .map(async path => {
+        const node = resolvePath(path, state.current)
+        if (node.sprite?.sheet) {
+          //  TODO: actually toggle sprite
+          node.sprite.frame = node.sprite.frame ? 0 : 1
+        }
+      })
+    draw(canvas.value, state.current)
+    setTimeout(toggleSpriteFrames, 500)
+  }
 
   let lastInteractionRun = Promise.resolve()
   async function applyInteractionScript(scriptName, event) {
