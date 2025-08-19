@@ -1,6 +1,6 @@
-import isShape from '../is-shape.js'
-import { get as getSprite } from '../player/sprites.js'
-import { resolve as resolvePath } from '../player/paths.js'
+import { isShape } from '../utils.js'
+import { get as getSprite } from '../sprites.js'
+import { resolve as resolvePath } from '../paths.js'
 
 export function object(ctx, root, path) {
   ctx.save()
