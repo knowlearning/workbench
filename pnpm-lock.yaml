@@ -29,6 +29,9 @@ importers:
       '@knowlearning/editor':
         specifier: ^1.0.2
         version: 1.0.2(vue@3.5.13)
+      '@knowlearning/patch-proxy':
+        specifier: ^1.3.4
+        version: 1.3.4
       '@vitejs/plugin-basic-ssl':
         specifier: ^1.2.0
         version: 1.2.0(vite@6.1.1(yaml@2.7.0))

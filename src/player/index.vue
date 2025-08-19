@@ -1,5 +1,7 @@
 <script setup>
   import { reactive, ref, onMounted } from 'vue'
+  import { applyPatch } from 'fast-json-patch'
+  import { standardJSONPatch } from '@knowlearning/patch-proxy'
   import execute from './execute.js'
   import { load as loadSprite } from './sprites.js'
   import { find as findPaths, resolve as resolvePath } from './paths.js'
@@ -58,13 +60,8 @@
           event: toParentEvent(path, state, { x, y, dx, dy })
         }
 
-        const result = await execute(context, shape[scriptName])
-        //  TODO: apply updates instead of full re-writes
-        Object
-          .entries(result.object)
-          .forEach(([key, value]) => {
-            shape[key] = value
-          })
+        const { patches } = await execute(context, shape[scriptName])
+        for (const patch of patches) applyPatch(shape, standardJSONPatch(patch), false, true)
       }
 
       if (paths.length) draw(canvas.value, state)
