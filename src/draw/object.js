@@ -1,25 +1,13 @@
 import isShape from '../is-shape.js'
 import { get as getSprite } from '../player/sprites.js'
+import { resolve as resolvePath } from '../player/paths.js'
 
 export default function drawObject(ctx, root, path) {
   ctx.save()
 
-  let node = root
+  transformContext(ctx, root, path)
 
-  if (isShape(node)) {
-    ctx.translate(node.position[0], node.position[1])
-    ctx.rotate((node.angle * Math.PI) / 180)
-  }
-
-  for (const key of path) {
-    node = node[key]
-    if (!node) break
-
-    if (isShape(node)) {
-      ctx.translate(node.position[0], node.position[1])
-      ctx.rotate((node.angle * Math.PI) / 180)
-    }
-  }
+  const node = resolvePath(path, root)
 
   if (node) {
     if (node.path) {
@@ -41,4 +29,23 @@ export default function drawObject(ctx, root, path) {
   }
 
   ctx.restore()
+}
+
+function transformContext(ctx, root, path) {
+  let node = root
+
+  if (isShape(node)) {
+    ctx.translate(node.position[0], node.position[1])
+    ctx.rotate((node.angle * Math.PI) / 180)
+  }
+
+  for (const key of path) {
+    node = node[key]
+    if (!node) break
+
+    if (isShape(node)) {
+      ctx.translate(node.position[0], node.position[1])
+      ctx.rotate((node.angle * Math.PI) / 180)
+    }
+  }
 }

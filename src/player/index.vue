@@ -5,6 +5,7 @@
   import drawObject from '../draw/object.js'
   import { load as loadSprite } from './sprites.js'
   import isShape from '../is-shape.js'
+  import { find as findPaths, resolve as resolvePath } from './paths.js'
 
   const { id } = defineProps({ id: String })
 
@@ -14,24 +15,6 @@
   if (!state.initialized) {
     state.current = JSON.parse(JSON.stringify(await Agent.state(id)))
     state.initialized = true
-  }
-
-  function findPaths(object, test, paths=[], path=[]) {
-    if (object && typeof object === "object") {
-      if (Array.isArray(object)) {
-        object.forEach((item, key) => {
-          findPaths(item, test, paths, [...path, key])
-        })
-      } else {
-        if (test(object, path)) paths.unshift(path)
-        for (const key in object) {
-          if (Object.prototype.hasOwnProperty.call(object, key)) {
-            findPaths(object[key], test, paths, [...path, key])
-          }
-        }
-      }
-    }
-    return paths
   }
 
   let drawScheduled = false
@@ -106,13 +89,6 @@
 
       if (paths.length) draw()
     })
-  }
-
-  function resolvePath(path, value) {
-    if (path.length && value !== undefined) {
-      return resolvePath(path.slice(1), value[path[0]])
-    }
-    return value
   }
 
   function isPointInsideShape(shape, px, py) {
