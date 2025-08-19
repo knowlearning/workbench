@@ -25,7 +25,7 @@
       findPaths(state, isShape)
         .map(async path => {
           const node = resolvePath(path, state)
-          if (node.sprite?.sheet) await loadSprite(node.sprite.sheet)
+          if (node.sprite?.definition.sheet) await loadSprite(node.sprite.definition.sheet)
         })
     )
     draw(canvas.value, state)
@@ -36,9 +36,9 @@
     findPaths(state, isShape)
       .map(path => {
         const node = resolvePath(path, state)
-        if (node.sprite?.sheet) {
-          const spriteState = node.sprite.states[node.sprite.state]
-          node.sprite.frame = (node.sprite.frame+1)%spriteState.frames.length
+        if (node.sprite?.definition.sheet) {node.sprite.state.name
+          const spriteDefinitionState = node.sprite.definition.states[node.sprite.state.name]
+          node.sprite.state.frame = (node.sprite.state.frame+1)%spriteDefinitionState.frames.length
         }
       })
     draw(canvas.value, state)
