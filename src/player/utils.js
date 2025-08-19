@@ -137,3 +137,22 @@ export function getWorldPosition(path, root) {
   const m = computeTransformToNode(path, root)
   return [m[2], m[5]] // translation part of the matrix
 }
+
+export function transformContext(ctx, root, path) {
+  let node = root
+
+  if (isShape(node)) {
+    ctx.translate(node.position[0], node.position[1])
+    ctx.rotate((node.angle * Math.PI) / 180)
+  }
+
+  for (const key of path) {
+    node = node[key]
+    if (!node) break
+
+    if (isShape(node)) {
+      ctx.translate(node.position[0], node.position[1])
+      ctx.rotate((node.angle * Math.PI) / 180)
+    }
+  }
+}
