@@ -35,9 +35,8 @@
       .map(path => {
         const node = resolvePath(path, state)
         if (node.sprite?.sheet) {
-          //  TODO: actually toggle sprite
-          const framesInState = node.sprite.states[node.sprite.state].frames.length
-          node.sprite.frame = (node.sprite.frame+1)%framesInState
+          const spriteState = node.sprite.states[node.sprite.state]
+          node.sprite.frame = (node.sprite.frame+1)%spriteState.frames.length
         }
       })
     draw(canvas.value, state)

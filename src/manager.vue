@@ -111,6 +111,14 @@
     return undefined
   }
 
+  function playContent(id) {
+    const w = window.open(
+      `/${id}`,
+      '_blank',
+      'toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=800,height=600'
+    )
+  }
+
 </script>
 
 <template>
@@ -165,13 +173,15 @@
       <Button
         icon="fa-solid fa-play"
         @click="() => {
-          content[activeContent].instances.push({
-            x: 100,
-            y: 100,
-            width: 500,
-            height: 500,
-            layer: instances.length
-          })
+          // // TODO: use the following for activeContent specific tools
+          // content[activeContent].instances.push({
+          //   x: 100,
+          //   y: 100,
+          //   width: 500,
+          //   height: 500,
+          //   layer: instances.length
+          // })
+          playContent(activeContent)
         }"
       />
     </div>
