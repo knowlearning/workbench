@@ -9,12 +9,7 @@
   const { id } = defineProps({ id: String })
 
   const canvas = ref(null)
-  const state = reactive(await Agent.state(`run-state/${id}`))
-
-  if (!state.initialized) {
-    state.current = JSON.parse(JSON.stringify(await Agent.state(id)))
-    state.initialized = true
-  }
+  const state = JSON.parse(JSON.stringify(await Agent.state(id)))
 
   onMounted(async () => {
     const ctx = canvas.value.getContext("2d")
@@ -25,42 +20,43 @@
     canvas.value.style.height = "512px"
     ctx.scale(dpr, dpr)
     await Promise.all(
-      findPaths(state.current, isShape)
+      findPaths(state, isShape)
         .map(async path => {
-          const node = resolvePath(path, state.current)
+          const node = resolvePath(path, state)
           if (node.sprite?.sheet) await loadSprite(node.sprite.sheet)
         })
     )
-    draw(canvas.value, state.current)
+    draw(canvas.value, state)
     toggleSpriteFrames()
   })
 
   function toggleSpriteFrames() {
-    findPaths(state.current, isShape)
-      .map(async path => {
-        const node = resolvePath(path, state.current)
+    findPaths(state, isShape)
+      .map(path => {
+        const node = resolvePath(path, state)
         if (node.sprite?.sheet) {
           //  TODO: actually toggle sprite
-          node.sprite.frame = node.sprite.frame ? 0 : 1
+          const framesInState = node.sprite.states[node.sprite.state].frames.length
+          node.sprite.frame = (node.sprite.frame+1)%framesInState
         }
       })
-    draw(canvas.value, state.current)
-    setTimeout(toggleSpriteFrames, 500)
+    draw(canvas.value, state)
+    setTimeout(toggleSpriteFrames, 60)
   }
 
   let lastInteractionRun = Promise.resolve()
   async function applyInteractionScript(scriptName, event) {
     const { detail: { clientX:x, clientY:y, dx, dy } } = event
     lastInteractionRun = lastInteractionRun.then(async () => {
-      const paths = findPaths(state.current, isShape)
+      const paths = findPaths(state, isShape)
 
       for (const path of paths) {
-        const shape = resolvePath(path, state.current)
-        if (!shape || !shape[scriptName] || !isPointInsideShapeWithParents(path, state.current, x - dx, y - dy)) continue
+        const shape = resolvePath(path, state)
+        if (!shape || !shape[scriptName] || !isPointInsideShapeWithParents(path, state, x - dx, y - dy)) continue
 
         const context = {
           object: JSON.parse(JSON.stringify(shape)),
-          event: toParentEvent(path, state.current, { x, y, dx, dy })
+          event: toParentEvent(path, state, { x, y, dx, dy })
         }
 
         const result = await execute(context, shape[scriptName])
@@ -72,7 +68,7 @@
           })
       }
 
-      if (paths.length) draw(canvas.value, state.current)
+      if (paths.length) draw(canvas.value, state)
     })
   }
 
