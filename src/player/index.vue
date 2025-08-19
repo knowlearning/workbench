@@ -36,7 +36,7 @@
     findPaths(state, isShape)
       .map(path => {
         const node = resolvePath(path, state)
-        if (node.sprite?.definition.sheet) {node.sprite.state.name
+        if (node.sprite?.definition.sheet) {
           const spriteDefinitionState = node.sprite.definition.states[node.sprite.state.name]
           node.sprite.state.frame = (node.sprite.state.frame+1)%spriteDefinitionState.frames.length
         }
