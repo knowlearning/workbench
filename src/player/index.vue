@@ -2,7 +2,7 @@
   import { reactive, ref, onMounted } from 'vue'
   import execute from './execute.js'
   import drawArrow from '../draw/arrow.js'
-  import drawObject from '../draw/object.js'
+  import { object as drawObject, sprite as drawSprite } from '../draw/object.js'
   import { load as loadSprite } from './sprites.js'
   import isShape from '../is-shape.js'
   import { find as findPaths, resolve as resolvePath } from './paths.js'
@@ -29,6 +29,7 @@
 
         const paths = findPaths(state.current, isShape)
 
+        paths.forEach(path => drawSprite(ctx, state.current, path))
         paths.forEach(path => drawObject(ctx, state.current, path))
 
         ctx.strokeStyle = "rgba(0, 0, 255, 0.5)" // blue, 50% opacity
