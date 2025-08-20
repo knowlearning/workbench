@@ -2,6 +2,7 @@ import { find as findPaths } from '../paths.js'
 import drawPolygon from './polygon.js'
 import drawSprite from './sprite.js'
 import drawArrow from './arrow.js'
+import drawText from './text.js'
 import { getWorldPosition } from '../utils.js'
 import { isShape } from '../utils.js'
 
@@ -19,6 +20,7 @@ export default function draw(canvas, state) {
 
       paths.forEach(path => drawSprite(ctx, state, path))
       paths.forEach(path => drawPolygon(ctx, state, path))
+      paths.forEach(path => drawText(ctx, state, path))
 
       ctx.strokeStyle = "rgba(0, 0, 255, 0.5)"
       ctx.lineWidth = 1
