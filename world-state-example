@@ -8,11 +8,11 @@ drag: |
 touch: |
   // js
   object.dragging = true
-  object.whatever.embedded.whatever.sprite.state.name = 'example2'
+  object.whatever.embedded.whatever.sprite.state = 'example2'
 untouch: |
   // js
   object.dragging = false
-  object.whatever.embedded.whatever.sprite.state.name = 'example1'
+  object.whatever.embedded.whatever.sprite.state = 'example1'
 polygon:
   - [-10, -10]
   - [10, -10]
@@ -68,9 +68,9 @@ whatever:
       position: [ 100, 0 ]
       angle: 30
       sprite:
-        state:
-          name: example1
-          frame: 0
+        name: example1
+        frame: 0
+        scale: 0.5
         definition:
           sheet: c07907d0-7c84-11f0-ba00-e705f7f79e62
           states:

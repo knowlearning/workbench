@@ -37,8 +37,8 @@
       .map(path => {
         const node = resolvePath(path, state)
         if (node.sprite?.definition.sheet) {
-          const spriteDefinitionState = node.sprite.definition.states[node.sprite.state.name]
-          node.sprite.state.frame = (node.sprite.state.frame+1)%spriteDefinitionState.frames.length
+          const spriteDefinitionState = node.sprite.definition.states[node.sprite.name]
+          node.sprite.frame = (node.sprite.frame+1)%spriteDefinitionState.frames.length
         }
       })
     draw(canvas.value, state)
