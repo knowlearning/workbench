@@ -22,6 +22,15 @@ position: [ 100, 100 ]
 angle: 90
 whatever:
   name: example 2
+  text:
+    value: Hello World
+    font: bold 16px Arial
+    fillStyle: orange
+    strokeStyle: black
+    lineWidth: 1
+    align: center
+    baseline: middle
+    offset: [0, 20]
   drag: |
     // js
     object.position[0] += event.dx
