@@ -6,27 +6,31 @@ drag: |
     object.position[1] += event.dy
   }
 touch: |
+  // js
   object.dragging = true
   object.whatever.embedded.whatever.sprite.state.name = 'example2'
 untouch: |
+  // js
   object.dragging = false
   object.whatever.embedded.whatever.sprite.state.name = 'example1'
-polygon: [
-  [-10, -10],
-  [10, -10],
-  [10, 10],
-  [-10, 10]
-]
-position: [ 100, 0 ]
+polygon:
+  - [-10, -10]
+  - [10, -10]
+  - [10, 10]
+  - [-10, 10]
+position: [ 100, 100 ]
 angle: 90
 whatever:
   name: example 2
   drag: |
+    // js
     object.position[0] += event.dx
     object.position[1] += event.dy
   touch: |
+    // js
     object.angle += 30
   untouch: |
+    // js
     object.angle -= 30
   polygon:
     - [-20, -10]
@@ -68,8 +72,7 @@ whatever:
                 [650, 250, 150, 200],
                 [850, 250, 150, 200],
                 [1050, 250, 150, 200],
-                [1250, 250, 150, 200],
-                [1450, 250, 150, 200]
+                [1250, 250, 150, 200]
               ]
               fps: 6
               loop: true
@@ -80,8 +83,7 @@ whatever:
                 [650, 500, 150, 200],
                 [850, 500, 150, 200],
                 [1050, 500, 150, 200],
-                [1250, 500, 150, 200],
-                [1450, 500, 150, 200]
+                [1250, 500, 150, 200]
               ]
               fps: 6
               loop: true

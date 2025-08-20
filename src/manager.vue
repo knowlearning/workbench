@@ -1,10 +1,11 @@
 <script setup>
-  import { ref, reactive, computed } from 'vue'
+  import { ref, reactive, computed, watch } from 'vue'
   import Button from './button.vue'
   import Editor from '@knowlearning/editor/editor.vue'
   import Instance from './instance.vue'
   import SidebarContent from './sidebar-content.vue'
   import TestWidget from './test-widget.vue'
+  import { resolve as resolvePath } from './player/paths.js'
 
   const ui = reactive(await Agent.state('ui'))
   const content = reactive(await Agent.state('content'))
@@ -103,6 +104,29 @@
     )
   }
 
+  let currentState
+  let unwatchLastCurrentState = () => {}
+
+  watch(
+    () => activeContent.value,
+    id => {
+      unwatchLastCurrentState()
+      if (id) {
+        unwatchLastCurrentState = (
+          Agent.watch(id, u => currentState = u.state)
+        )
+      }
+    },
+    { immediate: true }
+  )
+
+  function resolveLanguage(path) {
+    const value = resolvePath(path, currentState)
+    if (typeof value === "string" && /^\s*\/\/\s*js/.test(value)) {
+      return 'javascript'
+    }
+  }
+
   function resolveWidget(path) {
     if (path[0] === 'testBlock') return {
       component: TestWidget,
@@ -190,9 +214,7 @@
         v-if="activeContent"
         :key="activeContent"
         :id="activeContent"
-        :resolveLanguage="path => {
-          if (path[path.length-1] === 'javascript') return 'javascript'
-        }"
+        :resolveLanguage="resolveLanguage"
         :resolveWidget="resolveWidget"
         fill-height
       />
