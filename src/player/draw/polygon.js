@@ -8,12 +8,12 @@ export default function polygon(ctx, root, path) {
 
   const node = resolvePath(path, root)
 
-  if (node && node.path) {
+  if (node && node.polygon) {
     ctx.strokeStyle = "black"
     ctx.lineWidth = 1
     ctx.beginPath()
-    for (let i = 0; i < node.path.length; i++) {
-      const [x, y] = node.path[i]
+    for (let i = 0; i < node.polygon.length; i++) {
+      const [x, y] = node.polygon[i]
       if (i === 0) ctx.moveTo(x, y)
       else ctx.lineTo(x, y)
     }

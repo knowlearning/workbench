@@ -1,17 +1,17 @@
 export function isShape(object) {
   return (
-    Array.isArray(object.path) &&
+    Array.isArray(object.polygon) &&
     Array.isArray(object.position) &&
     typeof object.angle === "number"
   )
 }
 
 export function isPointInsideShape(shape, px, py) {
-  const { path } = shape
+  const { polygon } = shape
   let inside = false
-  for (let i = 0, j = path.length - 1; i < path.length; j = i++) {
-    const xi = path[i][0], yi = path[i][1]
-    const xj = path[j][0], yj = path[j][1]
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i][0], yi = polygon[i][1]
+    const xj = polygon[j][0], yj = polygon[j][1]
 
     const intersect = (
       yi > py !== yj > py &&
