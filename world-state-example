@@ -1,4 +1,12 @@
 name: Vector Frogs
+collider1:
+  position: [100, 100]
+  polygon:
+    - [-5, 5]
+    - [ 5, 5]
+    - [ 5, -5]
+    - [-5, -5]
+  angle: 0
 frog1:
   drags: 0
   text:
@@ -12,13 +20,17 @@ frog1:
     offset: [0, 75]
   handleEvent: |
       // js
-      if (event.type === 'keypress') {
-        object.text.value = 'wooo!'
+      if (event.type === 'keydown') {
+        object.text.value = 'wooo! ' + event.key
       }
       else if (event.type === 'touch') {
         const isTouching = pointInObject(event, object)
         object.dragging = isTouching
-        if (isTouching) object.angle += 30
+        if (isTouching) {
+          object.angle += 30
+          object.drags += 1
+          object.text.value = object.drags
+        }
       }
       else if (event.type === 'untouch') {
         if (object.dragging) object.angle -= 30
@@ -34,7 +46,7 @@ frog1:
   timeline:
     - |
       // js
-      object.jump(parabola) # if function returns a promise, timeline execution will halt until promise returns
+      object.jump(parabola)
   angle: 0
   polygon:
     - [-50, 50]

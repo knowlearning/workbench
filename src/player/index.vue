@@ -2,6 +2,7 @@
   import { reactive, ref, onMounted, onUnmounted } from 'vue'
   import { applyPatch } from 'fast-json-patch'
   import { standardJSONPatch } from '@knowlearning/patch-proxy'
+  import RAPIER from "@dimforge/rapier2d"
   import execute from './execute.js'
   import { load as loadSprite } from './sprites.js'
   import { find as findPaths, resolve as resolvePath } from './paths.js'
@@ -35,6 +36,47 @@
     draw(canvas.value, state)
     toggleSpriteFrames()
     window.addEventListener('keydown', handleKeyDown)
+
+    const world = new RAPIER.World({ x: 0, y: 0 })
+    const eventQueue = new RAPIER.EventQueue(true)
+
+    const colliderToObject = new Map()
+
+    const objects = []
+
+    for (let object of objects) {
+      const { position, polygon, angle } = object
+      const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
+        .setTranslation(position[0], position[1])
+        .setRotation(angle)
+
+      const body = world.createRigidBody(bodyDesc)
+      const verts = polygon.map(([x, y]) => new RAPIER.Vector2(x, y))
+      const colliderDesc = RAPIER.ColliderDesc.convexHull(verts)
+      if (!colliderDesc) continue
+
+      const collider = world.createCollider(colliderDesc, body)
+      colliderToObject.set(collider.handle, object)
+    }
+
+    function step() {
+      world.step(eventQueue)
+
+      // Process collision events
+      eventQueue.drainCollisionEvents((handle1, handle2, started) => {
+        const objA = colliderToObject.get(handle1)
+        const objB = colliderToObject.get(handle2)
+        if (started) {
+          console.log(`CONTACT START: ${objA?.id} <-> ${objB?.id}`)
+        } else {
+          console.log(`CONTACT END:   ${objA?.id} <-> ${objB?.id}`)
+        }
+      });
+
+      requestAnimationFrame(step);
+    }
+
+    step()
   })
 
   onUnmounted(() => {
