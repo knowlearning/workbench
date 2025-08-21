@@ -3,11 +3,12 @@ import drawPolygon from './polygon.js'
 import drawSprite from './sprite.js'
 import drawArrow from './arrow.js'
 import drawText from './text.js'
+import drawPhysics from './physics.js'
 import { getWorldPosition } from '../utils.js'
 import { isShape } from '../utils.js'
 
 let drawScheduled = false
-export default function draw(canvas, state) {
+export default function draw(canvas, state, world) {
   if (!drawScheduled) {
     drawScheduled = true
     requestAnimationFrame(() => {
@@ -32,6 +33,7 @@ export default function draw(canvas, state) {
           drawArrow(ctx, parentPos, childPos)
         }
       })
+      drawPhysics(ctx, world)
     })
   }
 }

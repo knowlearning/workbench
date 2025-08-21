@@ -14,6 +14,9 @@
   const canvas = ref(null)
   const state = JSON.parse(JSON.stringify(await Agent.state(id)))
 
+  let running = true
+  const world = new RAPIER.World({ x: 0, y: 0 })
+
   function handleKeyDown({ key, keyCode }) {
     handleEvent('keydown', { key, keyCode })
   }
@@ -33,68 +36,66 @@
           if (node.sprite?.definition.sheet) await loadSprite(node.sprite.definition.sheet)
         })
     )
-    draw(canvas.value, state)
-    toggleSpriteFrames()
+    draw(canvas.value, state, world)
     window.addEventListener('keydown', handleKeyDown)
 
-    const world = new RAPIER.World({ x: 0, y: 0 })
     const eventQueue = new RAPIER.EventQueue(true)
 
-    const colliderToObject = new Map()
+    const colliderToPath = new Map()
 
-    const objects = []
+    findPaths(state, isShape)
+      .map(path => [path, resolvePath(path, state)])
+      .forEach(([path, { position, polygon, angle }]) => {
+        //  TODO: revist the convex hull limitation
+        const rigidBody = world.createRigidBody(
+          RAPIER
+            .RigidBodyDesc
+            .dynamic()
+            .setTranslation(position[0], position[1])
+            .setRotation((angle || 0) * Math.PI / 180)
+        )
 
-    for (let object of objects) {
-      const { position, polygon, angle } = object
-      const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
-        .setTranslation(position[0], position[1])
-        .setRotation(angle)
+        const points = new Float32Array(polygon.flatMap(point => point))
+        const colliderDesc = RAPIER.ColliderDesc.convexHull(points)
 
-      const body = world.createRigidBody(bodyDesc)
-      const verts = polygon.map(([x, y]) => new RAPIER.Vector2(x, y))
-      const colliderDesc = RAPIER.ColliderDesc.convexHull(verts)
-      if (!colliderDesc) continue
-
-      const collider = world.createCollider(colliderDesc, body)
-      colliderToObject.set(collider.handle, object)
-    }
+        if (colliderDesc) {
+          colliderDesc.setDensity(1.0)
+          const collider = world.createCollider(colliderDesc, rigidBody)
+          colliderToPath.set(collider.handle, path)
+        }
+        else {
+          console.warn("Invalid convex hull for polygon:", polygon)
+        }
+      })
 
     function step() {
+      if (!running) return
+
       world.step(eventQueue)
 
-      // Process collision events
+      console.log('draining collisions events')
       eventQueue.drainCollisionEvents((handle1, handle2, started) => {
-        const objA = colliderToObject.get(handle1)
-        const objB = colliderToObject.get(handle2)
+        console.log('hmmm')
+        const objA = colliderToPath.get(handle1)
+        const objB = colliderToPath.get(handle2)
         if (started) {
           console.log(`CONTACT START: ${objA?.id} <-> ${objB?.id}`)
         } else {
           console.log(`CONTACT END:   ${objA?.id} <-> ${objB?.id}`)
-        }
-      });
+        } 
+      })
 
-      requestAnimationFrame(step);
+      requestAnimationFrame(step)
     }
 
     step()
   })
 
   onUnmounted(() => {
+    running = false
     window.removeEventListener('keydown', handleKeyDown)
   })
 
-  function toggleSpriteFrames() {
-    findPaths(state, isShape)
-      .map(path => {
-        const node = resolvePath(path, state)
-        if (node.sprite?.definition.sheet) {
-          const spriteDefinitionState = node.sprite.definition.states[node.sprite.state]
-          node.sprite.frame = (node.sprite.frame+1)%spriteDefinitionState.frames.length
-        }
-      })
-    draw(canvas.value, state)
-    setTimeout(toggleSpriteFrames, 60)
-  }
 
   let lastInteractionRun = Promise.resolve()
   async function handleEvent(type, event) {
@@ -125,7 +126,7 @@
         }
       }
 
-      if (paths.length) draw(canvas.value, state)
+      if (paths.length) draw(canvas.value, state, world)
     })
   }
 
