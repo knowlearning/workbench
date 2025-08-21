@@ -1,5 +1,5 @@
 <script setup>
-  import { reactive, ref, onMounted } from 'vue'
+  import { reactive, ref, onMounted, onUnmounted } from 'vue'
   import { applyPatch } from 'fast-json-patch'
   import { standardJSONPatch } from '@knowlearning/patch-proxy'
   import execute from './execute.js'
@@ -12,6 +12,10 @@
 
   const canvas = ref(null)
   const state = JSON.parse(JSON.stringify(await Agent.state(id)))
+
+  function handleKeyDown({ key, keyCode }) {
+    handleEvent('keydown', { key, keyCode })
+  }
 
   onMounted(async () => {
     const ctx = canvas.value.getContext("2d")
@@ -30,6 +34,11 @@
     )
     draw(canvas.value, state)
     toggleSpriteFrames()
+    window.addEventListener('keydown', handleKeyDown)
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeyDown)
   })
 
   function toggleSpriteFrames() {
@@ -47,7 +56,6 @@
 
   let lastInteractionRun = Promise.resolve()
   async function handleEvent(type, event) {
-    const { detail: { clientX:x, clientY:y, dx, dy } } = event
     lastInteractionRun = lastInteractionRun.then(async () => {
       const paths = findPaths(state, isShape)
 
@@ -56,9 +64,17 @@
         const script = object.handleEvent
 
         if (script) {
+          let eventExtras = {}
+          if (event.detail) {
+            const { detail: { clientX:x, clientY:y, dx, dy } } = event
+            eventExtras = toParentEvent(path, state, { x, y, dx, dy })
+          }
+          else {
+            eventExtras = event
+          }
           const context = {
             object,
-            event: { ...toParentEvent(path, state, { x, y, dx, dy }), type }
+            event: { ...eventExtras, type }
           }
           const { patches } = await execute(context, script)
           for (const patch of patches) {

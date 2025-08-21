@@ -1,18 +1,33 @@
 name: Vector Frogs
 frog1:
+  drags: 0
+  text:
+    value: Hello World
+    font: bold 16px Arial
+    fillStyle: orange
+    strokeStyle: black
+    lineWidth: 1
+    align: center
+    baseline: middle
+    offset: [0, 75]
   handleEvent: |
-    // js
-    if (event.type === 'touch') {
-      const isTouching = pointInObject(event, object)
-      object.dragging = isTouching
-    }
-    else if (event.type === 'untouch') {
-      object.dragging = false
-    }
-    else if (event.type === 'drag' && object.dragging) {
-      object.position[0] += event.dx
-      object.position[1] += event.dy
-    }
+      // js
+      if (event.type === 'keypress') {
+        object.text.value = 'wooo!'
+      }
+      else if (event.type === 'touch') {
+        const isTouching = pointInObject(event, object)
+        object.dragging = isTouching
+        if (isTouching) object.angle += 30
+      }
+      else if (event.type === 'untouch') {
+        if (object.dragging) object.angle -= 30
+        object.dragging = false
+      }
+      else if (event.type === 'drag' && object.dragging) {
+        object.position[0] += event.dx
+        object.position[1] += event.dy
+      }
   position: [100, 100]
   jump: |
     // js
