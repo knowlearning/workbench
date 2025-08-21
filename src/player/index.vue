@@ -6,7 +6,7 @@
   import { load as loadSprite } from './sprites.js'
   import { find as findPaths, resolve as resolvePath } from './paths.js'
   import draw from './draw/index.js'
-  import { isShape, isPointInsideShapeWithParents, toParentEvent } from './utils.js'
+  import { isShape, toParentEvent } from './utils.js'
 
   const { id } = defineProps({ id: String })
 
@@ -37,7 +37,7 @@
       .map(path => {
         const node = resolvePath(path, state)
         if (node.sprite?.definition.sheet) {
-          const spriteDefinitionState = node.sprite.definition.states[node.sprite.name]
+          const spriteDefinitionState = node.sprite.definition.states[node.sprite.state]
           node.sprite.frame = (node.sprite.frame+1)%spriteDefinitionState.frames.length
         }
       })
@@ -46,22 +46,25 @@
   }
 
   let lastInteractionRun = Promise.resolve()
-  async function applyInteractionScript(scriptName, event) {
+  async function handleEvent(type, event) {
     const { detail: { clientX:x, clientY:y, dx, dy } } = event
     lastInteractionRun = lastInteractionRun.then(async () => {
       const paths = findPaths(state, isShape)
 
       for (const path of paths) {
-        const shape = resolvePath(path, state)
-        if (!shape || !shape[scriptName] || !isPointInsideShapeWithParents(path, state, x - dx, y - dy)) continue
+        const object = resolvePath(path, state)
+        const script = object.handleEvent
 
-        const context = {
-          object: JSON.parse(JSON.stringify(shape)),
-          event: toParentEvent(path, state, { x, y, dx, dy })
+        if (script) {
+          const context = {
+            object,
+            event: { ...toParentEvent(path, state, { x, y, dx, dy }), type }
+          }
+          const { patches } = await execute(context, script)
+          for (const patch of patches) {
+            applyPatch(object, standardJSONPatch(patch), false, true)
+          }
         }
-
-        const { patches } = await execute(context, shape[scriptName])
-        for (const patch of patches) applyPatch(shape, standardJSONPatch(patch), false, true)
       }
 
       if (paths.length) draw(canvas.value, state)
@@ -73,9 +76,9 @@
 <template>
   <canvas
     v-drag
-    @dragstart="event => applyInteractionScript('touch', event)"
-    @drag="event => applyInteractionScript('drag', event)"
-    @dragend="event => applyInteractionScript('untouch', event)"
+    @dragstart="event => handleEvent('touch', event)"
+    @drag="event => handleEvent('drag', event)"
+    @dragend="event => handleEvent('untouch', event)"
     ref="canvas"
     :width="512"
     :height="512"
