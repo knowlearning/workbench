@@ -1,98 +1,41 @@
-name: example 1
-drag: |
-  // js
-  if (object.dragging) {
-    object.position[0] += event.dx
-    object.position[1] += event.dy
-  }
-touch: |
-  // js
-  object.dragging = true
-  object.whatever.embedded.whatever.sprite.state = 'example2'
-untouch: |
-  // js
-  object.dragging = false
-  object.whatever.embedded.whatever.sprite.state = 'example1'
-polygon:
-  - [-10, -10]
-  - [10, -10]
-  - [10, 10]
-  - [-10, 10]
-position: [ 100, 100 ]
-angle: 90
-whatever:
-  name: example 2
-  text:
-    value: Hello World
-    font: bold 16px Arial
-    fillStyle: orange
-    strokeStyle: black
-    lineWidth: 1
-    align: center
-    baseline: middle
-    offset: [0, 20]
-  drag: |
+name: Vector Frogs
+frog1:
+  handleEvent: |
     // js
-    object.position[0] += event.dx
-    object.position[1] += event.dy
-  touch: |
+    if (event.type === 'touch') {
+      const isTouching = pointInObject(event, object)
+      object.dragging = isTouching
+    }
+    else if (event.type === 'untouch') {
+      object.dragging = false
+    }
+    else if (event.type === 'drag' && object.dragging) {
+      object.position[0] += event.dx
+      object.position[1] += event.dy
+    }
+  position: [100, 100]
+  jump: |
     // js
-    object.angle += 30
-  untouch: |
-    // js
-    object.angle -= 30
+  timeline:
+    - |
+      // js
+      object.jump(parabola) # if function returns a promise, timeline execution will halt until promise returns
+  angle: 0
   polygon:
-    - [-20, -10]
-    - [20, -10]
-    - [20, 10]
-    - [-20, 10]
-  position: [ 100, 0 ]
-  angle: 240
-  embedded:
-    whatever:
-      name: example 2
-      drag: |
-        // js
-        object.position[0] += event.dx
-        object.position[1] += event.dy
-      touch: |
-        object.angle += 30
-      untouch: |
-        object.angle -= 30
-      polygon: [
-        [-20, -10],
-        [20, -10],
-        [20, 10],
-        [-20, 10]
-      ]
-      position: [ 100, 0 ]
-      angle: 30
-      sprite:
-        name: example1
-        frame: 0
-        scale: 0.5
-        definition:
-          sheet: c07907d0-7c84-11f0-ba00-e705f7f79e62
-          states:
-            example1:
-              frames: [
-                [250, 250, 150, 200],
-                [450, 250, 150, 200],
-                [650, 250, 150, 200],
-                [850, 250, 150, 200],
-                [1050, 250, 150, 200],
-                [1250, 250, 150, 200]
-              ]
-              fps: 6
-              loop: true
-            example2:
-              frames: [
-                [250, 500, 150, 200],
-                [450, 500, 150, 200],
-                [650, 500, 150, 200],
-                [850, 500, 150, 200],
-                [1050, 500, 150, 200],
-                [1250, 500, 150, 200]
-              ]
-              fps: 6
-              loop: true
+    - [-50, 50]
+    - [ 50, 50]
+    - [ 50, -50]
+    - [-50, -50]
+  sprite:
+    state: example1
+    frame: 0
+    scale: 0.15
+    definition:
+      sheet: 09836b70-7d87-11f0-a1e0-a7c6465c8684
+      states:
+        example1:
+          frames: [
+            [0, 100, 1150, 860]
+          ]
+          fps: 6
+          loop: true
