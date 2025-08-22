@@ -11,7 +11,7 @@
 
   const { id } = defineProps({ id: String })
 
-  const RAPIER_SCALE = 100
+  const RAPIER_SCALE = 1000
 
   const canvas = ref(null)
   const state = JSON.parse(JSON.stringify(await Agent.state(id)))
@@ -79,7 +79,8 @@
         }
       })
 
-    function step() {
+    let lastTime = performance.now()
+    function step(now) {
       if (!running) return
 
       world.step(eventQueue)
@@ -118,8 +119,13 @@
         handleEvent(started ? 'collide' : 'uncollide', event)
       })
 
-      requestAnimationFrame(step)
+      if (now) {
+        handleEvent('step', { dt: now - lastTime } )
+        lastTime = now
+      }
+
       queueDraw()
+      requestAnimationFrame(step)
     }
 
     step()
