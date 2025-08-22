@@ -13,7 +13,7 @@ export default function drawPhysics(ctx, world, scale) {
     const angle = body.rotation()
 
     ctx.save()
-    ctx.translate(pos.x, pos.y)
+    ctx.translate(pos.x*scale, pos.y*scale)
     ctx.rotate(angle)
 
     const shapeType = collider.shapeType()
@@ -21,7 +21,7 @@ export default function drawPhysics(ctx, world, scale) {
     switch (shapeType) {
       case RAPIER.ShapeType.Cuboid: {
         const he = collider.halfExtents()
-        ctx.strokeRect(-he.x*scale, -he.y*scale, he.x * 2*scale, he.y * 2*scale)
+        ctx.strokeRect(-he.x*scale, -he.y*scale, he.x*2*scale, he.y*2*scale)
         break
       }
       case RAPIER.ShapeType.Ball: {

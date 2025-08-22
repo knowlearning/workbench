@@ -11,6 +11,8 @@
 
   const { id } = defineProps({ id: String })
 
+  const RAPIER_SCALE = 100
+
   const canvas = ref(null)
   const state = JSON.parse(JSON.stringify(await Agent.state(id)))
 
@@ -21,7 +23,7 @@
   const colliderToPath = new Map()
   const pathToCollider = new Map()
 
-  const queueDraw = () => draw(canvas.value, state, world, 1)
+  const queueDraw = () => draw(canvas.value, state, world, RAPIER_SCALE)
 
   function handleKeyDown({ key, keyCode }) {
     handleEvent('keydown', { key, keyCode })
@@ -53,16 +55,17 @@
           RAPIER
             .RigidBodyDesc
             .dynamic()
-            .setTranslation(position[0], position[1])
+            .setTranslation(position[0]/RAPIER_SCALE, position[1]/RAPIER_SCALE)
             .setRotation((angle || 0) * Math.PI / 180)
         )
 
-        const points = new Float32Array(polygon.flatMap(point => point))
         const colliderDesc = (
           RAPIER
             .ColliderDesc
-            .convexHull(points)
-            .setDensity(1.0)
+            .convexHull(
+              new Float32Array(polygon.flatMap(point => point)).map(v => v/RAPIER_SCALE)
+            )
+            .setDensity(.1)
             .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS)
         )
 
@@ -91,11 +94,14 @@
         const translation = rigidBody.translation()
         const rotation = rigidBody.rotation()
 
+        const x = translation.x*RAPIER_SCALE
+        const y = translation.y*RAPIER_SCALE
+
         if (
-          object.position[0] !== translation.x ||
-          object.position[1] !== translation.y
+          object.position[0] !== x ||
+          object.position[1] !== y
         ) {
-          object.position = [translation.x, translation.y]
+          object.position = [x, y]
         }
 
         const newAngle = rotation * 180 / Math.PI
@@ -161,7 +167,7 @@
 
                 if (op.path[0] === 'position') {
                   const [x, y] = object.position
-                  rigidBody.setTranslation({ x, y }, true)
+                  rigidBody.setTranslation({ x: x/RAPIER_SCALE, y: y/RAPIER_SCALE }, true)
                 }
                 else if (op.path[0] === 'angle') {
                   const angle = (object.angle || 0) * Math.PI / 180
