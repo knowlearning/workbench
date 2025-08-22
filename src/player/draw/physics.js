@@ -18,8 +18,6 @@ export default function drawPhysics(ctx, world) {
 
     const shapeType = collider.shapeType()
 
-    console.log('rendering shape type...', shapeType)
-
     switch (shapeType) {
       case RAPIER.ShapeType.Cuboid: {
         const he = collider.halfExtents()

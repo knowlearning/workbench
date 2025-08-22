@@ -17,6 +17,10 @@
   let running = true
   const world = new RAPIER.World({ x: 0, y: 0 })
 
+  const colliderToPath = new Map()
+  const pathToCollider = new Map()
+
+
   function handleKeyDown({ key, keyCode }) {
     handleEvent('keydown', { key, keyCode })
   }
@@ -41,8 +45,6 @@
 
     const eventQueue = new RAPIER.EventQueue(true)
 
-    const colliderToPath = new Map()
-
     findPaths(state, isShape)
       .map(path => [path, resolvePath(path, state)])
       .forEach(([path, { position, polygon, angle }]) => {
@@ -62,6 +64,7 @@
           colliderDesc.setDensity(1.0)
           const collider = world.createCollider(colliderDesc, rigidBody)
           colliderToPath.set(collider.handle, path)
+          pathToCollider.set(JSON.stringify(path), collider.handle)
         }
         else {
           console.warn("Invalid convex hull for polygon:", polygon)
@@ -122,6 +125,26 @@
           const { patches } = await execute(context, script)
           for (const patch of patches) {
             applyPatch(object, standardJSONPatch(patch), false, true)
+            patch
+              .forEach(op => {
+                const colliderHandle = pathToCollider.get(JSON.stringify(path))
+                const collider = world.getCollider(colliderHandle)
+                const rigidBody = collider?.parent()
+
+                if (!rigidBody) return
+
+                if (op.path[0] === 'position') {
+                  const [x, y] = object.position
+                  rigidBody.setTranslation({ x, y }, true)
+                }
+                else if (op.path[0] === 'angle') {
+                  const angle = (object.angle || 0) * Math.PI / 180
+                  rigidBody.setRotation(angle, true)
+                }
+
+                // TODO: polygon/collider sync
+
+              })
           }
         }
       }
