@@ -16,6 +16,7 @@
 
   let running = true
   const world = new RAPIER.World({ x: 0, y: 0 })
+  const eventQueue = new RAPIER.EventQueue(true)
 
   const colliderToPath = new Map()
   const pathToCollider = new Map()
@@ -42,8 +43,6 @@
     )
     draw(canvas.value, state, world)
     window.addEventListener('keydown', handleKeyDown)
-
-    const eventQueue = new RAPIER.EventQueue(true)
 
     findPaths(state, isShape)
       .map(path => [path, resolvePath(path, state)])
@@ -89,6 +88,7 @@
       })
 
       requestAnimationFrame(step)
+      draw(canvas.value, state, world)
     }
 
     step()
