@@ -33,7 +33,27 @@ frog1:
         }
       }
       else if (event.type === 'untouch') {
-        if (this.dragging) this.angle -= 30
+        if (this.dragging) {
+          this.angle -= 30
+          this.hopping = true
+          this.hopStart = performance.now()
+          this.hopDuration = 1.0 // seconds
+          this.hopStartPos = [...this.position]
+          this.hopTarget = [this.position[0] + 100, this.position[1]]
+
+          this.g = 600 // px/s^2 (downward)
+
+          const dx = this.hopTarget[0] - this.hopStartPos[0]
+          const dy = this.hopTarget[1] - this.hopStartPos[1]
+
+          // horizontal velocity
+          this.vx = dx / this.hopDuration
+
+          // vertical initial velocity (so we land exactly at target)
+          this.vy = (dy - 0.5 * this.g * this.hopDuration * this.hopDuration) / this.hopDuration
+
+          console.log('hopping to', this.hopTarget, 'in', this.hopDuration, 's')
+        }
         this.dragging = false
       }
       else if (event.type === 'drag' && this.dragging) {
@@ -47,8 +67,20 @@ frog1:
         this.sprite.scale *= 1/1.1
       }
       else if (event.type === 'step') {
-        this.position[0] += event.dt / 100
-        this.angle += 1
+        if (this.hopping) {
+          const t = (performance.now() - this.hopStart) / 1000 // elapsed in seconds
+          if (t >= this.hopDuration) {
+            // finished
+            this.position[0] = this.hopTarget[0]
+            this.position[1] = this.hopTarget[1]
+            this.hopping = false
+            this.sprite.state = 'example1'
+          } else {
+            // projectile motion with gravity
+            this.position[0] = this.hopStartPos[0] + this.vx * t
+            this.position[1] = this.hopStartPos[1] + this.vy * t + 0.5 * this.g * t * t
+          }
+        }
       }
   position: [100, 100]
   jump: |
