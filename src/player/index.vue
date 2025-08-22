@@ -145,7 +145,8 @@
             eventExtras = event
           }
           const context = {
-            object,
+            path,
+            state,
             event: { ...eventExtras, type }
           }
           const { patches } = await execute(context, script)

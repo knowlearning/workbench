@@ -1,4 +1,5 @@
 import PatchProxy from '@knowlearning/patch-proxy'
+import { resolve as resolvePath } from './paths.js'
 
 const queue = []
 let busy = false
@@ -41,19 +42,21 @@ async function processQueue() {
   const { jobId, context, code } = queue.shift()
 
   try {
+    const { path, state, event } = context
     const patches = []
-    context.object = new PatchProxy(context.object, patch => patches.push(patch))
+    const object = new PatchProxy(resolvePath(path, state), patch => patches.push(patch))
 
-    const fullContext = { pointInObject, ...context }
+    const fullContext = { pointInObject, event }
     const keys = Object.keys(fullContext)
     const values = Object.values(fullContext)
 
     const fn = new Function(keys, `"use strict"; ${code}`)
-    await fn(...values)
+    await fn.apply(object, values)
 
     self.postMessage({ jobId, result: { patches } })
-  } catch (err) {
-    self.postMessage({ jobId, error: String(err) })
+  } catch (error) {
+    console.error(error)
+    self.postMessage({ jobId, error: String(error) })
   } finally {
     busy = false
     processQueue()
