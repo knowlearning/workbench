@@ -57,10 +57,15 @@
         )
 
         const points = new Float32Array(polygon.flatMap(point => point))
-        const colliderDesc = RAPIER.ColliderDesc.convexHull(points)
+        const colliderDesc = (
+          RAPIER
+            .ColliderDesc
+            .convexHull(points)
+            .setDensity(1.0)
+            .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS)
+        )
 
         if (colliderDesc) {
-          colliderDesc.setDensity(1.0)
           const collider = world.createCollider(colliderDesc, rigidBody)
           colliderToPath.set(collider.handle, path)
           pathToCollider.set(JSON.stringify(path), collider.handle)
