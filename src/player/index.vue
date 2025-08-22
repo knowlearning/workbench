@@ -80,6 +80,27 @@
 
       world.step(eventQueue)
 
+      for (const [colliderHandle, path] of colliderToPath.entries()) {
+        const collider = world.getCollider(colliderHandle)
+        const rigidBody = collider.parent()
+        if (!rigidBody) continue
+
+        const object = resolvePath(path, state)
+
+        const translation = rigidBody.translation()
+        const rotation = rigidBody.rotation()
+
+        if (
+          object.position[0] !== translation.x ||
+          object.position[1] !== translation.y
+        ) {
+          object.position = [translation.x, translation.y]
+        }
+
+        const newAngle = rotation * 180 / Math.PI
+        if (object.angle !== newAngle) object.angle = newAngle
+      }
+
       eventQueue.drainCollisionEvents((handle1, handle2, started) => {
         const pathA = colliderToPath.get(handle1)
         const pathB = colliderToPath.get(handle2)
