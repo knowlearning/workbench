@@ -40,10 +40,10 @@ frog1:
         this.position[0] += event.dx
         this.position[1] += event.dy
       }
-      else if (event.type === 'collide') {
+      else if (event.type === 'collide' && event.colliders.includes(this)) {
         this.sprite.scale *= 1.1
       }
-      else if (event.type === 'uncollide') {
+      else if (event.type === 'uncollide' && event.colliders.includes(this)) {
         this.sprite.scale *= 1/1.1
       }
   position: [100, 100]

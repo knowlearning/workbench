@@ -102,15 +102,13 @@
       }
 
       eventQueue.drainCollisionEvents((handle1, handle2, started) => {
-        const pathA = colliderToPath.get(handle1)
-        const pathB = colliderToPath.get(handle2)
-        const objA = resolvePath(pathA, state)
-        const objB = resolvePath(pathB, state)
-        if (started) {
-          handleEvent('collide', { objects: [objA, objB] })
-        } else {
-          handleEvent('uncollide', { objects: [objA, objB] })
-        } 
+        const event = {
+          paths: [
+            colliderToPath.get(handle1),
+            colliderToPath.get(handle2)
+          ]
+        }
+        handleEvent(started ? 'collide' : 'uncollide', event)
       })
 
       requestAnimationFrame(step)

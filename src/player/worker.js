@@ -4,6 +4,14 @@ import { resolve as resolvePath } from './paths.js'
 const queue = []
 let busy = false
 
+function isSamePath(a, b) {
+  return a.length === b.length && a.every((v, i) => v===b[i])
+}
+
+function isCollisionType(type) {
+  return ['collide', 'uncollide'].includes(type)
+}
+
 function pointInObject(point, { polygon, position, angle }) {
   let { x, y } = point
 
@@ -42,9 +50,17 @@ async function processQueue() {
   const { jobId, context, code } = queue.shift()
 
   try {
-    const { path, state, event } = context
+    let { path, state, event } = context
     const patches = []
     const object = new PatchProxy(resolvePath(path, state), patch => patches.push(patch))
+
+    //  TODO: generate one proxy object for state per game step and resolve against that
+    if (isCollisionType(event.type)) {
+      event = {
+        colliders: event.paths.map(p => isSamePath(p, path) ? object : resolvePath(path, state)),
+        type: event.type
+      }
+    }
 
     const fullContext = { pointInObject, event }
     const keys = Object.keys(fullContext)
