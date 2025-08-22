@@ -80,15 +80,15 @@
 
       world.step(eventQueue)
 
-      console.log('draining collisions events')
       eventQueue.drainCollisionEvents((handle1, handle2, started) => {
-        console.log('hmmm')
-        const objA = colliderToPath.get(handle1)
-        const objB = colliderToPath.get(handle2)
+        const pathA = colliderToPath.get(handle1)
+        const pathB = colliderToPath.get(handle2)
+        const objA = resolvePath(pathA, state)
+        const objB = resolvePath(pathB, state)
         if (started) {
-          console.log(`CONTACT START: ${objA?.id} <-> ${objB?.id}`)
+          handleEvent('collide', { objects: [objA, objB] })
         } else {
-          console.log(`CONTACT END:   ${objA?.id} <-> ${objB?.id}`)
+          handleEvent('uncollide', { objects: [objA, objB] })
         } 
       })
 
