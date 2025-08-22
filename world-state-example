@@ -1,6 +1,6 @@
 name: Vector Frogs
 collider1:
-  position: [100, 100]
+  position: [200, 100]
   polygon:
     - [-5, 5]
     - [ 5, 5]
@@ -21,24 +21,30 @@ frog1:
   handleEvent: |
       // js
       if (event.type === 'keydown') {
-        object.text.value = 'wooo! ' + event.key
+        this.text.value = 'wooo! ' + event.key
       }
       else if (event.type === 'touch') {
-        const isTouching = pointInObject(event, object)
-        object.dragging = isTouching
+        const isTouching = pointInObject(event, this)
+        this.dragging = isTouching
         if (isTouching) {
-          object.angle += 30
-          object.drags += 1
-          object.text.value = object.drags
+          this.angle += 30
+          this.drags += 1
+          this.text.value = this.drags
         }
       }
       else if (event.type === 'untouch') {
-        if (object.dragging) object.angle -= 30
-        object.dragging = false
+        if (this.dragging) this.angle -= 30
+        this.dragging = false
       }
-      else if (event.type === 'drag' && object.dragging) {
-        object.position[0] += event.dx
-        object.position[1] += event.dy
+      else if (event.type === 'drag' && this.dragging) {
+        this.position[0] += event.dx
+        this.position[1] += event.dy
+      }
+      else if (event.type === 'collide') {
+        this.sprite.scale *= 1.1
+      }
+      else if (event.type === 'uncollide') {
+        this.sprite.scale *= 1/1.1
       }
   position: [100, 100]
   jump: |
@@ -46,7 +52,7 @@ frog1:
   timeline:
     - |
       // js
-      object.jump(parabola)
+      this.jump(parabola)
   angle: 0
   polygon:
     - [-50, 50]
