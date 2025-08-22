@@ -35,24 +35,25 @@ frog1:
       else if (event.type === 'untouch') {
         if (this.dragging) {
           this.angle -= 30
-          this.hopping = true
-          this.hopStart = performance.now()
-          this.hopDuration = 1.0 // seconds
-          this.hopStartPos = [...this.position]
-          this.hopTarget = [this.position[0] + 100, this.position[1]]
 
-          this.g = 600 // px/s^2 (downward)
+          if (!this.hopping) {
+            this.hopping = true
+            this.hopStart = performance.now()
+            this.hopDuration = 1.0 // seconds
+            this.hopStartPos = [...this.position]
+            this.hopTarget = [this.position[0] + 100, this.position[1]]
 
-          const dx = this.hopTarget[0] - this.hopStartPos[0]
-          const dy = this.hopTarget[1] - this.hopStartPos[1]
+            this.g = 600 // px/s^2 (downward)
 
-          // horizontal velocity
-          this.vx = dx / this.hopDuration
+            const dx = this.hopTarget[0] - this.hopStartPos[0]
+            const dy = this.hopTarget[1] - this.hopStartPos[1]
 
-          // vertical initial velocity (so we land exactly at target)
-          this.vy = (dy - 0.5 * this.g * this.hopDuration * this.hopDuration) / this.hopDuration
+            // horizontal velocity
+            this.vx = dx / this.hopDuration
 
-          console.log('hopping to', this.hopTarget, 'in', this.hopDuration, 's')
+            // vertical initial velocity (so we land exactly at target)
+            this.vy = (dy - 0.5 * this.g * this.hopDuration * this.hopDuration) / this.hopDuration
+          }
         }
         this.dragging = false
       }
