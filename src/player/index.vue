@@ -21,6 +21,7 @@
   const colliderToPath = new Map()
   const pathToCollider = new Map()
 
+  const queueDraw = () => draw(canvas.value, state, world, 1)
 
   function handleKeyDown({ key, keyCode }) {
     handleEvent('keydown', { key, keyCode })
@@ -41,7 +42,7 @@
           if (node.sprite?.definition.sheet) await loadSprite(node.sprite.definition.sheet)
         })
     )
-    draw(canvas.value, state, world)
+    queueDraw()
     window.addEventListener('keydown', handleKeyDown)
 
     findPaths(state, isShape)
@@ -112,7 +113,7 @@
       })
 
       requestAnimationFrame(step)
-      draw(canvas.value, state, world)
+      queueDraw()
     }
 
     step()
@@ -174,7 +175,7 @@
         }
       }
 
-      if (paths.length) draw(canvas.value, state, world)
+      if (paths.length) queueDraw()
     })
   }
 

@@ -1,6 +1,6 @@
 import RAPIER from "@dimforge/rapier2d"
 
-export default function drawPhysics(ctx, world) {
+export default function drawPhysics(ctx, world, scale) {
   ctx.save()
   ctx.strokeStyle = "#0c0"
   ctx.lineWidth = 1
@@ -21,12 +21,12 @@ export default function drawPhysics(ctx, world) {
     switch (shapeType) {
       case RAPIER.ShapeType.Cuboid: {
         const he = collider.halfExtents()
-        ctx.strokeRect(-he.x, -he.y, he.x * 2, he.y * 2)
+        ctx.strokeRect(-he.x*scale, -he.y*scale, he.x * 2*scale, he.y * 2*scale)
         break
       }
       case RAPIER.ShapeType.Ball: {
         ctx.beginPath()
-        ctx.arc(0, 0, collider.radius(), 0, Math.PI * 2)
+        ctx.arc(0, 0, collider.radius()*scale, 0, Math.PI * 2)
         ctx.stroke()
         break
       }
@@ -34,9 +34,9 @@ export default function drawPhysics(ctx, world) {
         const verts = collider.vertices()
         if (verts.length >= 2) {
           ctx.beginPath()
-          ctx.moveTo(verts[0], verts[1])
+          ctx.moveTo(verts[0]*scale, verts[1]*scale)
           for (let i = 2; i < verts.length; i += 2) {
-            ctx.lineTo(verts[i], verts[i + 1])
+            ctx.lineTo(verts[i]*scale, verts[i + 1]*scale)
           }
           ctx.closePath()
           ctx.stroke()

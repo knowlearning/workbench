@@ -8,7 +8,7 @@ import { getWorldPosition } from '../utils.js'
 import { isShape } from '../utils.js'
 
 let drawScheduled = false
-export default function draw(canvas, state, world) {
+export default function draw(canvas, state, world, physicsScale) {
   if (!drawScheduled) {
     drawScheduled = true
     requestAnimationFrame(() => {
@@ -33,7 +33,7 @@ export default function draw(canvas, state, world) {
           drawArrow(ctx, parentPos, childPos)
         }
       })
-      drawPhysics(ctx, world)
+      drawPhysics(ctx, world, physicsScale)
     })
   }
 }
