@@ -8,7 +8,6 @@ collider1:
     - [-5, -5]
   angle: 0
 frog1:
-  drags: 0
   text:
     value: Hello World
     font: bold 16px Arial
@@ -18,7 +17,7 @@ frog1:
     align: center
     baseline: middle
     offset: [0, 75]
-  handleEvent: |
+  step: |
       // js
       if (event.type === 'keydown') {
         this.text.value = 'wooo! ' + event.key
@@ -39,20 +38,19 @@ frog1:
           if (!this.hopping) {
             this.hopping = true
             this.hopStart = performance.now()
-            this.hopDuration = 1.0 // seconds
+            this.hopDuration = 1 // seconds
             this.hopStartPos = [...this.position]
-            this.hopTarget = [this.position[0] + 100, this.position[1]]
+            this.hopTarget = [this.position[0] + 200, this.position[1]]
 
-            this.g = 600 // px/s^2 (downward)
+            this.g = 600
 
             const dx = this.hopTarget[0] - this.hopStartPos[0]
             const dy = this.hopTarget[1] - this.hopStartPos[1]
 
-            // horizontal velocity
             this.vx = dx / this.hopDuration
-
-            // vertical initial velocity (so we land exactly at target)
             this.vy = (dy - 0.5 * this.g * this.hopDuration * this.hopDuration) / this.hopDuration
+
+            console.log('hopping to', this.hopTarget, 'in', this.hopDuration, 's')
           }
         }
         this.dragging = false
@@ -84,9 +82,6 @@ frog1:
         }
       }
   position: [100, 100]
-  jump: |
-    // js
-    console.log('woo! timeline running')
   angle: 0
   polygon:
     - [-50, 50]
@@ -106,3 +101,7 @@ frog1:
           ]
           fps: 6
           loop: true
+
+
+
+
