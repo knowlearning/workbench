@@ -4,6 +4,7 @@ import { find as findPaths, resolve as resolvePath } from './paths.js'
 
 const scale = 1000
 const world = new RAPIER.World({ x: 0, y: 0 })
+const eventQueue = new RAPIER.EventQueue(true)
 const colliderToPath = new Map()
 const pathToCollider = new Map()
 
@@ -51,6 +52,46 @@ export function getColliderPathPairs() {
     const collider = world.getCollider(colliderHandle)
     return [collider, path]
   })
+}
+
+export function stepWorld(state) {
+  world.step(eventQueue)
+  for (const [collider, path] of getColliderPathPairs()) {
+    const rigidBody = collider.parent()
+    if (!rigidBody) continue
+
+    const object = resolvePath(path, state)
+
+    const translation = rigidBody.translation()
+    const rotation = rigidBody.rotation()
+
+    const x = translation.x*scale
+    const y = translation.y*scale
+
+    if (
+      object.position[0] !== x ||
+      object.position[1] !== y
+    ) {
+      object.position = [x, y]
+    }
+
+    const newAngle = rotation * 180 / Math.PI
+    if (object.angle !== newAngle) object.angle = newAngle
+  }
+
+  const events = []
+
+  eventQueue.drainCollisionEvents((handle1, handle2, started) => {
+    events.push({
+      started,
+      paths: [
+        colliderToPath.get(handle1),
+        colliderToPath.get(handle2)
+      ]
+    })
+  })
+
+  return events
 }
 
 export { world, scale }

@@ -2,7 +2,6 @@
   import { reactive, ref, onMounted, onUnmounted } from 'vue'
   import { applyPatch } from 'fast-json-patch'
   import { standardJSONPatch } from '@knowlearning/patch-proxy'
-  import RAPIER from "@dimforge/rapier2d"
   import execute from './execute.js'
   import { loadAll as loadAllSprites } from './sprites.js'
   import { find as findPaths, resolve as resolvePath } from './paths.js'
@@ -13,7 +12,8 @@
     world, scale as RAPIER_SCALE,
     initializeBodies as initializePhysicsBodies,
     getColliderFromPath,
-    getColliderPathPairs
+    getColliderPathPairs,
+    stepWorld
   } from './physics.js'
 
   const { id } = defineProps({ id: String })
@@ -22,7 +22,6 @@
   const state = JSON.parse(JSON.stringify(await Agent.state(id)))
 
   let running = true
-  const eventQueue = new RAPIER.EventQueue(true)
 
   const queueDraw = () => draw(canvas.value, state, world, RAPIER_SCALE)
 
@@ -42,40 +41,11 @@
     function step(now) {
       if (!running) return
 
-      world.step(eventQueue)
-
-      for (const [collider, path] of getColliderPathPairs()) {
-        const rigidBody = collider.parent()
-        if (!rigidBody) continue
-
-        const object = resolvePath(path, state)
-
-        const translation = rigidBody.translation()
-        const rotation = rigidBody.rotation()
-
-        const x = translation.x*RAPIER_SCALE
-        const y = translation.y*RAPIER_SCALE
-
-        if (
-          object.position[0] !== x ||
-          object.position[1] !== y
-        ) {
-          object.position = [x, y]
-        }
-
-        const newAngle = rotation * 180 / Math.PI
-        if (object.angle !== newAngle) object.angle = newAngle
-      }
-
-      eventQueue.drainCollisionEvents((handle1, handle2, started) => {
-        const event = {
-          paths: [
-            colliderToPath.get(handle1),
-            colliderToPath.get(handle2)
-          ]
-        }
-        handleEvent(started ? 'collide' : 'uncollide', event)
-      })
+      stepWorld(state)
+        .forEach(event => {
+          const type = event.started ? 'collide' : 'uncollide'
+          handleEvent(type, event)
+        })
 
       if (now) {
         handleEvent('step', { dt: now - lastTime } )
@@ -110,7 +80,6 @@
     }
   }
 
-
   function applyPatchesToObject(object, collider, patches) {
     for (const patch of patches) {
       applyPatch(object, standardJSONPatch(patch), false, true)
@@ -132,7 +101,6 @@
         })
     }
   }
-
 
   let lastInteractionRun = Promise.resolve()
   async function handleEvent(type, event) {
