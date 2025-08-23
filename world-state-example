@@ -20,6 +20,10 @@ frog1:
   step: |
       // js
       if (event.type === 'keydown') {
+        if (event.key === 'ArrowLeft') this.position[0] -= 10
+        if (event.key === 'ArrowRight') this.position[0] += 10
+        if (event.key === 'ArrowUp') this.position[1] -= 10
+        if (event.key === 'ArrowDown') this.position[1] += 10
         this.text.value = 'wooo! ' + event.key
       }
       else if (event.type === 'touch') {
