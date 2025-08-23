@@ -4,25 +4,25 @@
   import { standardJSONPatch } from '@knowlearning/patch-proxy'
   import RAPIER from "@dimforge/rapier2d"
   import execute from './execute.js'
-  import { load as loadSprite } from './sprites.js'
+  import { loadAll as loadAllSprites } from './sprites.js'
   import { find as findPaths, resolve as resolvePath } from './paths.js'
   import draw from './draw/index.js'
   import { isShape, toParentEvent } from './utils.js'
-  import screen from './screen.js'
+  import initializeCanvas from './initialize-canvas.js'
+  import {
+    world, scale as RAPIER_SCALE,
+    initializeBodies as initializePhysicsBodies,
+    getColliderFromPath,
+    getColliderPathPairs
+  } from './physics.js'
 
   const { id } = defineProps({ id: String })
-
-  const RAPIER_SCALE = 1000
 
   const canvas = ref(null)
   const state = JSON.parse(JSON.stringify(await Agent.state(id)))
 
   let running = true
-  const world = new RAPIER.World({ x: 0, y: 0 })
   const eventQueue = new RAPIER.EventQueue(true)
-
-  const colliderToPath = new Map()
-  const pathToCollider = new Map()
 
   const queueDraw = () => draw(canvas.value, state, world, RAPIER_SCALE)
 
@@ -31,54 +31,12 @@
   }
 
   onMounted(async () => {
-    const ctx = canvas.value.getContext("2d")
-    const dpr = window.devicePixelRatio || 1
-    canvas.value.width = screen.width * dpr
-    canvas.value.height = screen.height * dpr
-    canvas.value.style.width = `${screen.width}px`
-    canvas.value.style.height = `${screen.height}px`
-    ctx.scale(dpr, dpr)
-    await Promise.all(
-      findPaths(state, isShape)
-        .map(async path => {
-          const node = resolvePath(path, state)
-          if (node.sprite?.definition.sheet) await loadSprite(node.sprite.definition.sheet)
-        })
-    )
-    queueDraw()
+    initializeCanvas(canvas.value)
+    await loadAllSprites(state)
+    initializePhysicsBodies(state)
     window.addEventListener('keydown', handleKeyDown)
 
-    findPaths(state, isShape)
-      .map(path => [path, resolvePath(path, state)])
-      .forEach(([path, { position, polygon, angle }]) => {
-        //  TODO: revist the convex hull limitation
-        const rigidBody = world.createRigidBody(
-          RAPIER
-            .RigidBodyDesc
-            .dynamic()
-            .setTranslation(position[0]/RAPIER_SCALE, position[1]/RAPIER_SCALE)
-            .setRotation((angle || 0) * Math.PI / 180)
-        )
-
-        const colliderDesc = (
-          RAPIER
-            .ColliderDesc
-            .convexHull(
-              new Float32Array(polygon.flatMap(point => point)).map(v => v/RAPIER_SCALE)
-            )
-            .setDensity(.1)
-            .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS)
-        )
-
-        if (colliderDesc) {
-          const collider = world.createCollider(colliderDesc, rigidBody)
-          colliderToPath.set(collider.handle, path)
-          pathToCollider.set(JSON.stringify(path), collider.handle)
-        }
-        else {
-          console.warn("Invalid convex hull for polygon:", polygon)
-        }
-      })
+    queueDraw()
 
     let lastTime = performance.now()
     function step(now) {
@@ -86,8 +44,7 @@
 
       world.step(eventQueue)
 
-      for (const [colliderHandle, path] of colliderToPath.entries()) {
-        const collider = world.getCollider(colliderHandle)
+      for (const [collider, path] of getColliderPathPairs()) {
         const rigidBody = collider.parent()
         if (!rigidBody) continue
 
@@ -186,8 +143,7 @@
         const object = resolvePath(path, state)
         const script = object.step
         if (script) {
-          const colliderHandle = pathToCollider.get(JSON.stringify(path))
-          const collider = world.getCollider(colliderHandle)
+          const collider = getColliderFromPath(path)
           const context = getPathSpecificContext(path, event, type)
           const { patches } = await execute(context, script)
           applyPatchesToObject(object, collider, patches)
