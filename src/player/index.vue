@@ -8,6 +8,7 @@
   import { find as findPaths, resolve as resolvePath } from './paths.js'
   import draw from './draw/index.js'
   import { isShape, toParentEvent } from './utils.js'
+  import screen from './screen.js'
 
   const { id } = defineProps({ id: String })
 
@@ -32,10 +33,10 @@
   onMounted(async () => {
     const ctx = canvas.value.getContext("2d")
     const dpr = window.devicePixelRatio || 1
-    canvas.value.width = 512 * dpr
-    canvas.value.height = 512 * dpr
-    canvas.value.style.width = "512px"
-    canvas.value.style.height = "512px"
+    canvas.value.width = screen.width * dpr
+    canvas.value.height = screen.height * dpr
+    canvas.value.style.width = `${screen.width}px`
+    canvas.value.style.height = `${screen.height}px`
     ctx.scale(dpr, dpr)
     await Promise.all(
       findPaths(state, isShape)

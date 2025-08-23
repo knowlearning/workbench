@@ -6,6 +6,7 @@ import drawText from './text.js'
 import drawPhysics from './physics.js'
 import { getWorldPosition } from '../utils.js'
 import { isShape } from '../utils.js'
+import screen from '../screen.js'
 
 let drawScheduled = false
 export default function draw(canvas, state, world, physicsScale) {
@@ -15,7 +16,7 @@ export default function draw(canvas, state, world, physicsScale) {
       drawScheduled = false
 
       const ctx = canvas.getContext("2d")
-      ctx.clearRect(0, 0, 512, 512)
+      ctx.clearRect(0, 0, screen.width, screen.height)
 
       const paths = findPaths(state, isShape)
 
