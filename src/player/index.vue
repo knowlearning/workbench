@@ -37,26 +37,32 @@
 
     queueDraw()
 
-    let lastTime = performance.now()
+    let accumulator = 0
+    const fixedDelta = 1000 / 60
+    let lastTime = 0
+
     function step(now) {
       if (!running) return
 
-      stepWorld(state)
-        .forEach(event => {
+      const dt = now - lastTime
+      lastTime = now
+      accumulator += dt
+
+      while (accumulator >= fixedDelta) {
+        const events = stepWorld(state)
+        events.forEach(event => {
           const type = event.started ? 'collide' : 'uncollide'
           handleEvent(type, event)
         })
-
-      if (now) {
-        handleEvent('step', { dt: now - lastTime } )
-        lastTime = now
+        handleEvent('step', { dt: fixedDelta })
+        accumulator -= fixedDelta
       }
 
       queueDraw()
       requestAnimationFrame(step)
     }
 
-    step()
+    step(0)
   })
 
   onUnmounted(() => {

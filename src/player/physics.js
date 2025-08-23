@@ -2,7 +2,7 @@ import RAPIER from "@dimforge/rapier2d"
 import { isShape } from './utils.js'
 import { find as findPaths, resolve as resolvePath } from './paths.js'
 
-const scale = 1000
+const scale = 50
 const world = new RAPIER.World({ x: 0, y: 0 })
 const eventQueue = new RAPIER.EventQueue(true)
 const colliderToPath = new Map()
