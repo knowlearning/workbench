@@ -9,7 +9,8 @@
   import { isShape, toParentEvent } from './utils.js'
   import initializeCanvas from './initialize-canvas.js'
   import {
-    world, scale as RAPIER_SCALE,
+    world,
+    scale as RAPIER_SCALE,
     initializeBodies as initializePhysicsBodies,
     getColliderFromPath,
     getColliderPathPairs,
@@ -22,11 +23,13 @@
   const state = JSON.parse(JSON.stringify(await Agent.state(id)))
 
   let running = true
+  const eventQueue = []
 
   const queueDraw = () => draw(canvas.value, state, world, RAPIER_SCALE)
+  const queueEvent = event => eventQueue.push(event)
 
   function handleKeyDown({ key, keyCode }) {
-    handleEvent('keydown', { key, keyCode })
+    queueEvent({ type: 'keydown', key, keyCode })
   }
 
   onMounted(async () => {
@@ -41,20 +44,26 @@
     const fixedDelta = 1000 / 60
     let lastTime = 0
 
-    function step(now) {
+    async function step(now) {
       if (!running) return
 
-      const dt = now - lastTime
+      accumulator += now - lastTime
       lastTime = now
-      accumulator += dt
 
       while (accumulator >= fixedDelta) {
         const events = stepWorld(state)
         events.forEach(event => {
-          const type = event.started ? 'collide' : 'uncollide'
-          handleEvent(type, event)
+          queueEvent({
+            type: event.started ? 'collide' : 'uncollide',
+            ...event
+          })
         })
-        handleEvent('step', { dt: fixedDelta })
+        queueEvent({ type: 'step', dt: fixedDelta })
+        while (eventQueue.length) {
+          const event = eventQueue.shift()
+          if (event.type !== 'step') console.log('handling event...', event)
+          await handleEvent(event.type, event)
+        }
         accumulator -= fixedDelta
       }
 
@@ -70,19 +79,15 @@
     window.removeEventListener('keydown', handleKeyDown)
   })
 
+  function isTouchEvent(type) {
+    return ['touch', 'untouch', 'drag'].includes(type)
+  }
+
   function getPathSpecificContext(path, event, type) {
-    let eventExtras = {}
-    if (event.detail) {
-      const { detail: { clientX:x, clientY:y, dx, dy } } = event
-      eventExtras = toParentEvent(path, state, { x, y, dx, dy })
-    }
-    else {
-      eventExtras = event
-    }
     return {
       path,
       state,
-      event: { ...eventExtras, type }
+      event: isTouchEvent(event.type) ? { ...toParentEvent(path, state, event), type } : event
     }
   }
 
@@ -108,24 +113,21 @@
     }
   }
 
-  let lastInteractionRun = Promise.resolve()
   async function handleEvent(type, event) {
-    lastInteractionRun = lastInteractionRun.then(async () => {
-      const paths = findPaths(state, isShape)
+    const paths = findPaths(state, isShape)
 
-      for (const path of paths) {
-        const object = resolvePath(path, state)
-        const script = object.step
-        if (script) {
-          const collider = getColliderFromPath(path)
-          const context = getPathSpecificContext(path, event, type)
-          const { patches } = await execute(context, script)
-          applyPatchesToObject(object, collider, patches)
-        }
+    for (const path of paths) {
+      const object = resolvePath(path, state)
+      const script = object.step
+      if (script) {
+        const collider = getColliderFromPath(path)
+        const context = getPathSpecificContext(path, event, type)
+        if (event.type !== 'step') console.log('path specific context', event, object)
+        const { patches } = await execute(context, script)
+        if (event.type !== 'step') console.log('patches...', patches)
+        applyPatchesToObject(object, collider, patches)
       }
-
-      if (paths.length) queueDraw()
-    })
+    }
   }
 
 </script>
@@ -133,9 +135,27 @@
 <template>
   <canvas
     v-drag
-    @dragstart="event => handleEvent('touch', event)"
-    @drag="event => handleEvent('drag', event)"
-    @dragend="event => handleEvent('untouch', event)"
+    @dragstart="event => {
+      const { detail: { clientX:x, clientY:y, dx, dy } } = event
+      queueEvent({
+        type: 'touch',
+        x, y, dx, dy
+      })
+    }"
+    @drag="event => {
+      const { detail: { clientX:x, clientY:y, dx, dy } } = event
+      queueEvent({
+        type: 'drag',
+        x, y, dx, dy
+      })
+    }"
+    @dragend="event => {
+      const { detail: { clientX:x, clientY:y, dx, dy } } = event
+      queueEvent({
+        type: 'untouch',
+        x, y, dx, dy
+      })
+    }"
     ref="canvas"
     :width="512"
     :height="512"
