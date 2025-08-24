@@ -32,7 +32,6 @@
 
     async function step(now) {
       if (!running) return
-      draw(canvas.value, state)
 
       accumulator += now - lastTime
       lastTime = now
@@ -40,15 +39,16 @@
       while (accumulator >= dt) {
         const currentQueue = eventQueue
         eventQueue = []
-        stepWorld(state).forEach(queueEvent)
         queueEvent({ type: 'step', dt })
         const { patches } = await execute({ state, events: currentQueue })
         for (const patch of patches) {
           applyPatch(state, standardJSONPatch(patch), false, true)
           applyPatchToPhysicsLayer(patch, state)
         }
+        stepWorld(state).forEach(queueEvent)
         accumulator -= dt
       }
+      draw(canvas.value, state)
       requestAnimationFrame(step)
     }
 

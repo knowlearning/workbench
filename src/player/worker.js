@@ -69,7 +69,7 @@ async function processQueue() {
 
             if (isCollisionType(event.type)) {
               event = {
-                colliders: event.paths.map(p => isSamePath(p, path) ? object : resolvePath(path, state)),
+                colliders: event.paths.map(p => resolvePath(p, root)),
                 type: event.type
               }
             }
