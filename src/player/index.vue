@@ -37,10 +37,9 @@
       accumulator += now - lastTime
       lastTime = now
 
-      const currentQueue = eventQueue
-      eventQueue = []
-
       while (accumulator >= dt) {
+        const currentQueue = eventQueue
+        eventQueue = []
         stepWorld(state).forEach(queueEvent)
         queueEvent({ type: 'step', dt })
         const { patches } = await execute({ state, events: currentQueue })
