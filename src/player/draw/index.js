@@ -7,9 +7,10 @@ import drawPhysics from './physics.js'
 import { getWorldPosition } from '../utils.js'
 import { isShape } from '../utils.js'
 import screen from '../screen.js'
+import { world, scale as physicsScale } from '../physics.js'
 
 let drawScheduled = false
-export default function draw(canvas, state, world, physicsScale) {
+export default function draw(canvas, state) {
   if (!drawScheduled) {
     drawScheduled = true
     requestAnimationFrame(() => {

@@ -1,4 +1,4 @@
-import RAPIER from "@dimforge/rapier2d"
+import RAPIER from '@dimforge/rapier2d'
 
 export default function drawPhysics(ctx, world, scale) {
   ctx.save()

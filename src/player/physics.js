@@ -83,7 +83,7 @@ export function stepWorld(state) {
 
   eventQueue.drainCollisionEvents((handle1, handle2, started) => {
     events.push({
-      started,
+      type: started ? 'collide' : 'uncollide',
       paths: [
         colliderToPath.get(handle1),
         colliderToPath.get(handle2)
@@ -95,3 +95,28 @@ export function stepWorld(state) {
 }
 
 export { world, scale }
+
+
+export function applyPatchToPhysicsLayer(patch, root) {
+  // TODO: polygon/collider sync
+  patch
+    .forEach(op => {
+      //  TODO: make path stuff not fragile
+      if (op.path[op.path.length-2] === 'position') {
+        const p = op.path.slice(0, -2)
+        const rigidBody = getColliderFromPath(p)?.parent()
+        if (!rigidBody) return
+        const object = resolvePath(p, root)
+        const [x, y] = object.position
+        rigidBody.setTranslation({ x: x/scale, y: y/scale }, true)
+      }
+      else if (op.path[op.path.length-1] === 'angle') {
+        const p = op.path.slice(0, -1)
+        const rigidBody = getColliderFromPath(p)?.parent()
+        if (!rigidBody) return
+        const object = resolvePath(p, root)
+        const angle = (object.angle || 0) * Math.PI / 180
+        rigidBody.setRotation(angle, true)
+      }
+    })
+}

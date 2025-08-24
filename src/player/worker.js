@@ -1,5 +1,6 @@
 import PatchProxy from '@knowlearning/patch-proxy'
-import { resolve as resolvePath } from './paths.js'
+import { find as findPaths, resolve as resolvePath } from './paths.js'
+import { isShape, toParentEvent } from './utils.js'
 
 const queue = []
 let busy = false
@@ -50,24 +51,39 @@ async function processQueue() {
   const { jobId, context, code } = queue.shift()
 
   try {
-    let { path, state, event } = context
+    let { state, events } = context
+
     const patches = []
-    const object = new PatchProxy(resolvePath(path, state), patch => patches.push(patch))
+    const root = new PatchProxy(state, patch => patches.push(patch))
 
-    //  TODO: generate one proxy object for state per game step and resolve against that
-    if (isCollisionType(event.type)) {
-      event = {
-        colliders: event.paths.map(p => isSamePath(p, path) ? object : resolvePath(path, state)),
-        type: event.type
-      }
-    }
+    const paths = findPaths(state, isShape)
 
-    const fullContext = { pointInObject, event }
-    const keys = Object.keys(fullContext)
-    const values = Object.values(fullContext)
+    // TODO: avoid resolving path on the inside here
+    await Promise.all(
+      events.flatMap(async event => {
+        paths.flatMap(async path => {
+          const object = resolvePath(path, root)
+          const script = object.step
+          if (script) {
+            const context = getPathSpecificContext(path, root, event)
 
-    const fn = new Function(keys, `"use strict"; ${code}`)
-    await fn.apply(object, values)
+            if (isCollisionType(event.type)) {
+              event = {
+                colliders: event.paths.map(p => isSamePath(p, path) ? object : resolvePath(path, state)),
+                type: event.type
+              }
+            }
+
+            const fullContext = { pointInObject, event }
+            const keys = Object.keys(fullContext)
+            const values = Object.values(fullContext)
+
+            const fn = new Function(keys, `"use strict"; ${script}`)
+            await fn.apply(object, values)
+          }
+        })
+      })
+    )
 
     self.postMessage({ jobId, result: { patches } })
   } catch (error) {
@@ -77,4 +93,16 @@ async function processQueue() {
     busy = false
     processQueue()
   }
+}
+
+function getPathSpecificContext(path, state, event) {
+  return {
+    path,
+    state,
+    event: isTouchEvent(event.type) ? { ...toParentEvent(path, state, event), type: event.type } : event
+  }
+}
+
+function isTouchEvent(type) {
+  return ['touch', 'untouch', 'drag'].includes(type)
 }
