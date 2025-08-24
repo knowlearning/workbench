@@ -63,7 +63,7 @@ async function processQueue() {
       events.flatMap(async event => {
         paths.flatMap(async path => {
           const object = resolvePath(path, root)
-          const script = object.step
+          const script = object.reactions?.[event.type] || object.step
           if (script) {
             const context = getPathSpecificContext(path, root, event)
 
