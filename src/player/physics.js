@@ -8,11 +8,11 @@ const eventQueue = new RAPIER.EventQueue(true)
 const colliderToPath = new Map()
 const pathToCollider = new Map()
 
-world.timestep = 1 / 60
-world.integrationParameters.numSolverIterations = 12
-world.integrationParameters.numAdditionalFrictionIterations = 4
-world.integrationParameters.allowedLinearError = 0.0001
-world.integrationParameters.erp = 0.9
+// world.timestep = 1 / 60
+// world.integrationParameters.numSolverIterations = 12
+// world.integrationParameters.numAdditionalFrictionIterations = 4
+// world.integrationParameters.allowedLinearError = 0.0001
+// world.integrationParameters.erp = 0.9
 
 export function initializeBodies(state) {
   findPaths(state, isShape)
@@ -25,7 +25,7 @@ export function initializeBodies(state) {
           .dynamic()
           .setTranslation(position[0]/scale, position[1]/scale)
           .setRotation((angle || 0) * Math.PI / 180)
-          .setCcdEnabled(true)
+          //.setCcdEnabled(true)
       )
 
       const colliderDesc = (
