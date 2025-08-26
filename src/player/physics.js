@@ -63,22 +63,20 @@ export function getColliderPathPairs() {
 
 export function stepWorld(state) {
   world.step(eventQueue)
+
+  applyFollowIntent(state)
+
   for (const [collider, path] of getColliderPathPairs()) {
     const rigidBody = collider.parent()
     if (!rigidBody) continue
-
     const object = resolvePath(path, state)
 
     const translation = rigidBody.translation()
     const rotation = rigidBody.rotation()
 
-    const x = translation.x*scale
-    const y = translation.y*scale
-
-    if (
-      object.position[0] !== x ||
-      object.position[1] !== y
-    ) {
+    const x = translation.x * scale
+    const y = translation.y * scale
+    if (object.position[0] !== x || object.position[1] !== y) {
       object.position = [x, y]
     }
 
@@ -87,7 +85,6 @@ export function stepWorld(state) {
   }
 
   const events = []
-
   eventQueue.drainCollisionEvents((handle1, handle2, started) => {
     events.push({
       type: started ? 'collide' : 'uncollide',
@@ -100,6 +97,7 @@ export function stepWorld(state) {
 
   return events
 }
+
 
 export { world, scale }
 
@@ -126,4 +124,49 @@ export function applyPatchToPhysicsLayer(patch, root) {
         rigidBody.setRotation(angle, true)
       }
     })
+}
+
+function applyFollowIntent(state, dt = 1/60) {
+  for (const [collider, path] of getColliderPathPairs()) {
+    const rigidBody = collider.parent()
+    if (!rigidBody) continue
+    const object = resolvePath(path, state)
+    if (!object.physics?.follow) continue
+
+    const f = object.physics.follow
+    const pos = rigidBody.translation() // {x, y}
+    const angle = rigidBody.rotation()  // radians
+    const mass = rigidBody.mass()
+
+    // Follow vector in object's local space
+    const lx = (f.position?.[0] ?? 0) / scale
+    const ly = (f.position?.[1] ?? 0) / scale
+
+    // Rotate follow vector by object rotation to get world-space offset
+    const cosA = Math.cos(angle)
+    const sinA = Math.sin(angle)
+    const offsetX = lx * cosA - ly * sinA
+    const offsetY = lx * sinA + ly * cosA
+
+    // Target world position = current position + rotated local offset
+    const targetX = pos.x + offsetX
+    const targetY = pos.y + offsetY
+
+    // Compute PD impulse
+    const dx = targetX - pos.x
+    const dy = targetY - pos.y
+    const v = rigidBody.linvel()
+    const vx = v.x
+    const vy = v.y
+
+    const stiffness = f.stiffness ?? 1
+    const damping = f.damping ?? 1
+
+    const desiredVX = (dx / dt) * stiffness
+    const desiredVY = (dy / dt) * stiffness
+    const impulseX = mass * (desiredVX - vx) * damping
+    const impulseY = mass * (desiredVY - vy) * damping
+
+    rigidBody.applyImpulse({ x: impulseX, y: impulseY }, true)
+  }
 }
