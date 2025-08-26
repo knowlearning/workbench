@@ -52,7 +52,7 @@
       requestAnimationFrame(step)
     }
 
-    step(0)
+    requestAnimationFrame(() => step(0))
   })
 
   onUnmounted(() => {
