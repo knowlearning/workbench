@@ -1,9 +1,9 @@
 import RAPIER from '@dimforge/rapier2d'
+import { getObjectFromCollider } from '../physics.js'
+import drawArrow from './arrow.js'
 
-export default function drawPhysics(ctx, world, scale) {
+export default function drawPhysics(ctx, world, scale, state) {
   ctx.save()
-  ctx.strokeStyle = "#0c0"
-  ctx.lineWidth = 1
 
   world.forEachCollider(collider => {
     const body = collider.parent()
@@ -15,6 +15,18 @@ export default function drawPhysics(ctx, world, scale) {
     ctx.save()
     ctx.translate(pos.x*scale, pos.y*scale)
     ctx.rotate(angle)
+
+    const bodyData = getObjectFromCollider(collider, state)
+
+    if (bodyData?.physics?.follow?.position) {
+      const followPosition = bodyData?.physics?.follow?.position
+      ctx.strokeStyle = "#E10600"
+      ctx.lineWidth = 2
+      drawArrow(ctx, [0, 0], followPosition, 20)
+    }
+
+    ctx.strokeStyle = "#0c0"
+    ctx.lineWidth = 1
 
     const shapeType = collider.shapeType()
 

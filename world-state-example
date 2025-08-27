@@ -19,7 +19,7 @@ frog1:
     offset: [0, 75]
   physics:
     follow:
-      position: [1, 0] # target position in own coordinates
+      position: [2, 0] # target position in own coordinates
       angle: 0 # target angle in parent
       stiffness: 1 # defines strength of pull
       damping: 1 # defines friciton like behavior

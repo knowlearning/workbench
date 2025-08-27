@@ -29,5 +29,5 @@ export default function draw(canvas, state) {
       drawArrow(ctx, parentPos, childPos)
     }
   })
-  drawPhysics(ctx, world, physicsScale)
+  drawPhysics(ctx, world, physicsScale, state)
 }

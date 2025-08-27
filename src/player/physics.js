@@ -61,6 +61,11 @@ export function getColliderPathPairs() {
   })
 }
 
+export function getObjectFromCollider(collider, state) {
+  const path = colliderToPath.get(collider.handle)
+  return resolvePath(path, state)
+}
+
 export function stepWorld(state) {
   world.step(eventQueue)
 
