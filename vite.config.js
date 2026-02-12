@@ -11,6 +11,9 @@ export default defineConfig({
   build: {
     target: 'esnext'
   },
+  optimizeDeps: {
+    include: ["debug"]
+  },
   plugins: [
     vue({
       template: {
@@ -23,6 +26,7 @@ export default defineConfig({
     basicSsl()
   ],
   resolve: {
+    dedupe: ["debug"],
     alias: [
       {
         find: '@knowlearning/editor',
