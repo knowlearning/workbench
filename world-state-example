@@ -106,7 +106,7 @@ frog1:
     frame: 0
     scale: 0.15
     definition:
-      sheet: 09836b70-7d87-11f0-a1e0-a7c6465c8684
+      sheet: 19445ec0-07a7-11f1-861d-899b3d78cc14
       states:
         example1:
           frames: [
