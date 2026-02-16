@@ -1,0 +1,18 @@
+name: New Content
+x: 50 # can be function. functions are evaluated at every step and can be used to force values
+y: 50 # ''
+angle: 0 # ''
+hitbox: [] # closed path
+constrain:
+  - reference: mouse # evaluated statement. If function, it is executed per frame to set up/tear down constraints
+    distance: 0 # desired distance between 
+    stiffness: 0.5 # spring force keeping distance
+    angle: 0 # desired angle between bodies
+    anglularStiffness: 0.5 # spring force keeping angle
+step: |
+  // script to run in context of this to apply any side effects
+sprite: # could be a reference to a uuid that has all this info from a sprite site...
+  state: example1
+  scale: 0.15
+  speed: 1
+  sheet: 09836b70-7d87-11f0-a1e0-a7c6465c8684

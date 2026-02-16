@@ -1,0 +1,68 @@
+sheet: /spritesheet.png
+player: /sprite
+
+# frames: [x, y, w, h, ox, oy]
+# - rect is in sheet pixels: origin top-left, x right, y down
+# - ox, oy REQUIRED, normalized within the frame [0..1]
+frames:
+  idle_0:   [ 825, 149, 183, 190, 0.5, 1.0]
+  idle_1:   [1035, 149, 187, 189, 0.5, 1.0]
+
+  run_0:    [ 689, 445, 201, 191, 0.5, 1.0]
+  run_1:    [ 924, 444, 198, 190, 0.5, 1.0]
+  run_2:    [1142, 447, 199, 178, 0.5, 1.0]
+
+  wobble_0: [ 626, 753, 189, 180, 0.5, 1.0]
+  wobble_1: [ 828, 760, 189, 174, 0.5, 1.0]
+  wobble_2: [1030, 757, 196, 177, 0.5, 1.0]
+  wobble_3: [1238, 753, 204, 181, 0.5, 1.0]
+
+  wobble_4: [ 620,1055, 194, 177, 0.5, 1.0]
+  wobble_5: [ 828,1061, 199, 171, 0.5, 1.0]
+  wobble_6: [1037,1059, 192, 173, 0.5, 1.0]
+  wobble_7: [1243,1059, 205, 174, 0.5, 1.0]
+
+# states:
+# - loop: "once" | "repeat" | "alternate" | N
+#   - "once": play forward once, stop on last frame
+#   - "repeat": loop forward infinitely
+#   - "alternate": ping-pong infinitely (no duplicated endpoints)
+#   - N (number): repeat forward exactly N times
+# - sequence: [ [frameName, durationMs], ... ]
+#   - duration is REQUIRED and in milliseconds (integer >= 0)
+states:
+
+  idle:
+    loop: repeat
+    sequence:
+      - [idle_0, 250]
+      - [idle_1, 250]
+
+  run:
+    loop: repeat
+    sequence:
+      - [run_0, 80]
+      - [run_1, 80]
+      - [run_2, 80]
+
+  attack:
+    loop: once
+    sequence:
+      - [run_0, 120]
+      - [run_1, 100]
+      - [run_2, 200]
+
+  burst:
+    loop: 3
+    sequence:
+      - [run_0, 50]
+      - [run_1, 50]
+      - [run_2, 50]
+
+  wobble:
+    loop: alternate
+    sequence:
+      - [wobble_0, 100]
+      - [wobble_1, 100]
+      - [wobble_2, 100]
+      - [wobble_3, 100]

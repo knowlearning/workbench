@@ -6,13 +6,16 @@
   import SidebarContent from './sidebar-content.vue'
   import TestWidget from './test-widget.vue'
   import { resolve as resolvePath } from './player/paths.js'
+  import Player from './player.vue'
 
   const ui = reactive(await Agent.state('ui'))
   const content = reactive(await Agent.state('content'))
   const draggingSidebar = ref(false)
+  const draggingPlayer = ref(false)
 
   ui.editingName = false
   if (ui.sidebarWidth === undefined) ui.sidebarWidth = 300
+  if (ui.playerWidth === undefined) ui.playerWidth = 300
 
   const orderedContent = computed(() => (
     Object
@@ -79,6 +82,11 @@
 
   function dragSidebar({ detail: { dx } }) {
     ui.sidebarWidth = Math.max(0, ui.sidebarWidth + dx)
+  }
+
+  function dragPlayer({ detail: { dx } }) {
+    console.log('DRAGGING PLAYER?', dx)
+    ui.playerWidth = Math.max(0, ui.playerWidth + dx)
   }
 
   function removeInstance(id, index) {
@@ -207,6 +215,38 @@
           // })
           playContent(activeContent)
         }"
+      />
+    </div>
+    <div
+      id="player"
+      :class="{ dragging: draggingPlayer }"
+      :style="`
+        width: ${ui.playerWidth}px;
+        height: 100vh;
+        flex-shrink: 0;
+        flex-grow: 0;
+        position: relative;
+      `"
+    >
+      <Player
+        :key="activeContent"
+        :id="activeContent"
+      />
+      <div
+        :style="`
+          width: 16px;
+          height: 100vh;
+          position: absolute;
+          right: -8px;
+          background: rgba(255, 0, 0, 0);
+          z-index: 1000000;
+          top: 0;
+          cursor: ew-resize;
+        `"
+        v-drag
+        @dragstart="draggingPlayer = true"
+        @drag="dragPlayer"
+        @dragend="draggingPlayer = false"
       />
     </div>
     <div id="content">
