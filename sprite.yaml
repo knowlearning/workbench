@@ -1,3 +1,5 @@
+name: new sprite
+
 sheet: /spritesheet.png
 player: /sprite
 
@@ -16,11 +18,6 @@ frames:
   wobble_1: [ 828, 760, 189, 174, 0.5, 1.0]
   wobble_2: [1030, 757, 196, 177, 0.5, 1.0]
   wobble_3: [1238, 753, 204, 181, 0.5, 1.0]
-
-  wobble_4: [ 620,1055, 194, 177, 0.5, 1.0]
-  wobble_5: [ 828,1061, 199, 171, 0.5, 1.0]
-  wobble_6: [1037,1059, 192, 173, 0.5, 1.0]
-  wobble_7: [1243,1059, 205, 174, 0.5, 1.0]
 
 # states:
 # - loop: "once" | "repeat" | "alternate" | N
