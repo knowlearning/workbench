@@ -39,6 +39,10 @@ const FRAME_FILL = 'rgba(255, 200, 0, 0.9)'
 const FRAME_HOVER_STROKE = 'rgba(255, 240, 140, 0.95)'
 const FRAME_HOVER_FILL = 'rgba(255, 240, 140, 0.95)'
 
+// all frames in active state
+const FRAME_STATE_STROKE = 'rgba(60, 220, 120, 0.95)'
+const FRAME_STATE_FILL = 'rgba(60, 220, 120, 0.9)'
+
 // active edit highlight (dragging/resizing/origin)
 const FRAME_ACTIVE_OUTLINE = 'rgba(0, 255, 180, 0.95)'
 const FRAME_ACTIVE_OUTLINE_W = 2
@@ -280,6 +284,12 @@ function pickDefaultFrameName() {
   return names[0] || ''
 }
 
+function activeStateFrameSet() {
+  const st = states.value[preview.state]
+  if (!st || !Array.isArray(st.sequence)) return new Set()
+  return new Set(st.sequence.map(s => s?.[0]).filter(Boolean))
+}
+
 // playhead = the frame the preview is currently showing (even if paused on a manual frame)
 function currentPlayheadFrameName() {
   if (activeFrame.value) return activeFrame.value
@@ -290,6 +300,7 @@ function currentPlayheadFrameName() {
   return pickDefaultFrameName()
 }
 
+// NOTE: hover intentionally NOT used for preview anymore
 function pickPreviewFrameName() {
   if (activeFrame.value) return activeFrame.value
   if (preview.manualFrameName && frames.value[preview.manualFrameName]) return preview.manualFrameName
@@ -374,7 +385,6 @@ function drawPreviewPanel(ctx, cw, ch) {
   const cw2 = w - pad * 2
   const ch2 = h - headerH - pad * 2
 
-  // highlight preview panel only when editing (active frame)
   if (frameName && frameName === activeFrame.value) {
     ctx.strokeStyle = FRAME_ACTIVE_OUTLINE
     ctx.lineWidth = FRAME_ACTIVE_OUTLINE_W
@@ -452,6 +462,7 @@ function draw(ctx, c, now) {
   if (preview.playing) preview.t += dt * preview.speed
 
   const playheadName = currentPlayheadFrameName()
+  const stateSet = activeStateFrameSet()
 
   ctx.fillStyle = BG_COLOR
   ctx.fillRect(0, 0, cw, ch)
@@ -478,13 +489,15 @@ function draw(ctx, c, now) {
     const isActive = name === activeFrame.value
     const isPlayhead = name === playheadName
     const isHot = isActive || (name === hoverFrame.value && !activeFrame.value)
+    const isInActiveState = stateSet.has(name)
 
-    // base rect stroke
+    // base rect stroke (state frames are green)
     ctx.lineWidth = 1
-    ctx.strokeStyle = isHot ? FRAME_HOVER_STROKE : FRAME_STROKE
+    if (isInActiveState) ctx.strokeStyle = FRAME_STATE_STROKE
+    else ctx.strokeStyle = isHot ? FRAME_HOVER_STROKE : FRAME_STROKE
     ctx.strokeRect(sx, sy, sw, sh)
 
-    // playhead outline (only when not actively editing that frame)
+    // playhead outline (current anim frame)
     if (isPlayhead && !isActive) {
       ctx.strokeStyle = FRAME_PLAYHEAD_OUTLINE
       ctx.lineWidth = FRAME_PLAYHEAD_OUTLINE_W
@@ -500,7 +513,7 @@ function draw(ctx, c, now) {
       ctx.lineWidth = 1
     }
 
-    // handles
+    // handles (state frames are green)
     const b = rectWorldBounds(f)
     const hx = (b.x1 + b.x2) / 2
     const hy = (b.y1 + b.y2) / 2
@@ -510,7 +523,8 @@ function draw(ctx, c, now) {
       [b.x2, b.y2], [hx, b.y2], [b.x1, b.y2],
       [b.x1, hy]
     ]
-    ctx.fillStyle = isHot ? FRAME_HOVER_FILL : FRAME_FILL
+    if (isInActiveState) ctx.fillStyle = FRAME_STATE_FILL
+    else ctx.fillStyle = isHot ? FRAME_HOVER_FILL : FRAME_FILL
     for (const [px, py] of pts) ctx.fillRect(px - 3, py - 3, 6, 6)
 
     // origin
@@ -838,12 +852,6 @@ function setupInteractions(c) {
       return
     }
 
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      stepState(1)
-      return
-    }
-
     if (e.key === 'Escape') {
       hoverFrame.value = ''
       activeFrame.value = ''
@@ -870,6 +878,8 @@ function setupInteractions(c) {
   }
 }
 
+let teardown = null
+
 onMounted(() => {
   const c = canvas.value
   if (!c) return
@@ -885,8 +895,6 @@ onMounted(() => {
 watch(sheetUrl, (url) => {
   if (url) loadSheet(url)
 })
-
-let teardown = null
 
 onBeforeUnmount(() => {
   if (raf) cancelAnimationFrame(raf)
