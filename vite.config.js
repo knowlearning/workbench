@@ -30,7 +30,7 @@ export default defineConfig({
     alias: [
       {
         find: '@knowlearning/editor',
-        replacement: __dirname + '/../platform/packages/editor'
+        replacement: __dirname + '/../../kl/platform/packages/editor'
       },
       {
         find: 'fast-json-patch',
