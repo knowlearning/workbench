@@ -115,22 +115,59 @@ function sheetToWorld(x, y) {
   }
 }
 
-function ensureOxOy(f) {
-  if (f.length < 6) {
-    f[4] = 0.5
-    f[5] = 1
-  } else {
-    if (typeof f[4] !== 'number') f[4] = 0.5
-    if (typeof f[5] !== 'number') f[5] = 1
+// Non-mutating read (defaults/clamp without writing back)
+function readFrame(f) {
+  if (!Array.isArray(f) || f.length < 4) return null
+
+  const x = Number(f[0]) || 0
+  const y = Number(f[1]) || 0
+  const w = Number(f[2]) || 0
+  const h = Number(f[3]) || 0
+
+  let ox = typeof f[4] === 'number' ? f[4] : 0.5
+  let oy = typeof f[5] === 'number' ? f[5] : 1
+
+  ox = clamp(ox, 0, 1)
+  oy = clamp(oy, 0, 1)
+
+  return { x, y, w, h, ox, oy }
+}
+
+// Mutating write used ONLY for real edits
+function writeFrame(name, next) {
+  const f = frames.value[name]
+  if (!Array.isArray(f) || f.length < 4) return false
+
+  let changed = false
+  const set = (i, v) => {
+    if (f[i] !== v) {
+      f[i] = v
+      changed = true
+    }
   }
-  f[4] = clamp(f[4], 0, 1)
-  f[5] = clamp(f[5], 0, 1)
+
+  set(0, next.x)
+  set(1, next.y)
+  set(2, next.w)
+  set(3, next.h)
+
+  if (f.length < 6) {
+    f[4] = next.ox
+    f[5] = next.oy
+    changed = true
+  } else {
+    set(4, next.ox)
+    set(5, next.oy)
+  }
+
+  return changed
 }
 
 function rectWorldBounds(f) {
-  const [x, y, w, h] = f
-  const tl = sheetToWorld(x, y)
-  const br = sheetToWorld(x + w, y + h)
+  const rf = readFrame(f)
+  if (!rf) return { x1: 0, y1: 0, x2: 0, y2: 0 }
+  const tl = sheetToWorld(rf.x, rf.y)
+  const br = sheetToWorld(rf.x + rf.w, rf.y + rf.h)
   return { x1: tl.x, y1: tl.y, x2: br.x, y2: br.y }
 }
 
@@ -162,9 +199,9 @@ function hitHandle(worldX, worldY, f) {
 }
 
 function originWorldPos(f) {
-  ensureOxOy(f)
-  const [x, y, w, h, ox, oy] = f
-  return sheetToWorld(x + ox * w, y + oy * h)
+  const rf = readFrame(f)
+  if (!rf) return sheetToWorld(0, 0)
+  return sheetToWorld(rf.x + rf.ox * rf.w, rf.y + rf.oy * rf.h)
 }
 
 function hitOrigin(worldX, worldY, f) {
@@ -177,41 +214,39 @@ function hitOrigin(worldX, worldY, f) {
 
 function applyOriginToFrame(name, sheetX, sheetY) {
   const f = frames.value[name]
-  if (!f) return
-  ensureOxOy(f)
+  const rf = readFrame(f)
+  if (!rf) return
 
-  const x = f[0]
-  const y = f[1]
-  const w = f[2] || 1
-  const h = f[3] || 1
+  const denomW = rf.w || 1
+  const denomH = rf.h || 1
 
-  f[4] = clamp((sheetX - x) / w, 0, 1)
-  f[5] = clamp((sheetY - y) / h, 0, 1)
+  const ox = clamp((sheetX - rf.x) / denomW, 0, 1)
+  const oy = clamp((sheetY - rf.y) / denomH, 0, 1)
 
-  scheduleLog()
+  const changed = writeFrame(name, { ...rf, ox, oy })
+  if (changed) scheduleLog()
 }
 
 function applyRectToFrame(name, x, y, w, h) {
   const f = frames.value[name]
-  if (!f) return
-  ensureOxOy(f)
+  const rf = readFrame(f)
+  if (!rf) return
 
-  const ox = f[4]
-  const oy = f[5]
-  const anchorX = f[0] + ox * f[2]
-  const anchorY = f[1] + oy * f[3]
+  const anchorX = rf.x + rf.ox * rf.w
+  const anchorY = rf.y + rf.oy * rf.h
 
-  f[0] = roundInt(x)
-  f[1] = roundInt(y)
-  f[2] = roundInt(w)
-  f[3] = roundInt(h)
+  const nx = roundInt(x)
+  const ny = roundInt(y)
+  const nw = roundInt(w)
+  const nh = roundInt(h)
 
-  const denomW = f[2] || 1
-  const denomH = f[3] || 1
-  f[4] = clamp((anchorX - f[0]) / denomW, 0, 1)
-  f[5] = clamp((anchorY - f[1]) / denomH, 0, 1)
+  const denomW = nw || 1
+  const denomH = nh || 1
+  const ox = clamp((anchorX - nx) / denomW, 0, 1)
+  const oy = clamp((anchorY - ny) / denomH, 0, 1)
 
-  scheduleLog()
+  const changed = writeFrame(name, { x: nx, y: ny, w: nw, h: nh, ox, oy })
+  if (changed) scheduleLog()
 }
 
 let logT = 0
@@ -375,6 +410,7 @@ function drawPreviewPanel(ctx, cw, ch) {
 
   const frameName = pickPreviewFrameName()
   const f = frames.value[frameName]
+  const rf = readFrame(f)
 
   const playTxt = preview.playing ? 'playing' : 'paused'
   ctx.fillText(`preview (${playTxt})`, x + pad, y + 8)
@@ -409,9 +445,8 @@ function drawPreviewPanel(ctx, cw, ch) {
   ctx.lineTo(cx + cw2 - 6, ay + 0.5)
   ctx.stroke()
 
-  if (img?.complete && img.naturalWidth && Array.isArray(f) && f.length >= 4) {
-    ensureOxOy(f)
-    const [sx, sy, sw, sh, ox, oy] = f
+  if (img?.complete && img.naturalWidth && rf) {
+    const { x: sx, y: sy, w: sw, h: sh, ox, oy } = rf
 
     const maxScaleX = Math.floor((cw2 * 0.9) / Math.max(1, sw))
     const maxScaleY = Math.floor((ch2 * 0.9) / Math.max(1, sh))
@@ -477,9 +512,9 @@ function draw(ctx, c, now) {
   ctx.textBaseline = 'top'
 
   for (const [name, f] of Object.entries(frames.value)) {
-    if (!Array.isArray(f) || f.length < 4) continue
-    ensureOxOy(f)
-    const [x, y, w, h, ox, oy] = f
+    const rf = readFrame(f)
+    if (!rf) continue
+    const { x, y, w, h, ox, oy } = rf
 
     const sx = x * view.scale + view.panX
     const sy = y * view.scale + view.panY
@@ -583,23 +618,20 @@ function setupInteractions(c) {
 
     for (let i = entries.length - 1; i >= 0; i--) {
       const [name, f] = entries[i]
-      if (!Array.isArray(f) || f.length < 4) continue
-      ensureOxOy(f)
+      if (!readFrame(f)) continue
       if (hitOrigin(wx, wy, f)) return { kind: 'origin', name }
     }
 
     for (let i = entries.length - 1; i >= 0; i--) {
       const [name, f] = entries[i]
-      if (!Array.isArray(f) || f.length < 4) continue
-      ensureOxOy(f)
+      if (!readFrame(f)) continue
       const h = hitHandle(wx, wy, f)
       if (h) return { kind: 'handle', name, handle: h }
     }
 
     for (let i = entries.length - 1; i >= 0; i--) {
       const [name, f] = entries[i]
-      if (!Array.isArray(f) || f.length < 4) continue
-      ensureOxOy(f)
+      if (!readFrame(f)) continue
       if (hitRect(wx, wy, f)) return { kind: 'rect', name }
     }
 
@@ -652,15 +684,16 @@ function setupInteractions(c) {
     activeFrame.value = activeName
 
     const f = activeName ? frames.value[activeName] : null
+    const rf = readFrame(f)
     start = {
       clientX: e.clientX,
       clientY: e.clientY,
       panX: view.panX,
       panY: view.panY,
-      fx: f?.[0] ?? 0,
-      fy: f?.[1] ?? 0,
-      fw: f?.[2] ?? 0,
-      fh: f?.[3] ?? 0,
+      fx: rf?.x ?? 0,
+      fy: rf?.y ?? 0,
+      fw: rf?.w ?? 0,
+      fh: rf?.h ?? 0,
       sx: sp.x,
       sy: sp.y
     }
@@ -699,8 +732,7 @@ function setupInteractions(c) {
 
     const name = activeName
     const f = frames.value[name]
-    if (!f) return
-    ensureOxOy(f)
+    if (!readFrame(f)) return
 
     if (mode === 'origin') {
       applyOriginToFrame(name, sp.x, sp.y)
