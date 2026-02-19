@@ -89,6 +89,32 @@ function resizeToDisplaySize(c) {
   return false
 }
 
+// ---------- fit/center on load ----------
+const FIT_PAD = 16 // CSS px margin inside canvas
+
+function fitSheetToCanvas() {
+  const c = canvas.value
+  if (!c || !img?.complete || !img.naturalWidth || !img.naturalHeight) return
+
+  resizeToDisplaySize(c)
+
+  const pixelRatio = dpr()
+  const cw = c.width / pixelRatio
+  const ch = c.height / pixelRatio
+
+  const w = img.naturalWidth
+  const h = img.naturalHeight
+
+  const availW = Math.max(1, cw - FIT_PAD * 2)
+  const availH = Math.max(1, ch - FIT_PAD * 2)
+
+  const s = Math.min(availW / w, availH / h)
+
+  view.scale = clamp(s, 0.25, 20)
+  view.panX = (cw - w * view.scale) / 2
+  view.panY = (ch - h * view.scale) / 2
+}
+
 // ---------- helpers ----------
 const HANDLE = 6 // CSS px
 const MIN_SIZE = 2 // sheet px
@@ -602,7 +628,7 @@ function loadSheet(url) {
   img = new Image()
   img.src = url
   img.onload = () => {
-    view.scale = Math.max(1, Math.min(6, Math.floor(512 / img.naturalWidth)))
+    fitSheetToCanvas()
   }
 }
 
@@ -911,6 +937,7 @@ function setupInteractions(c) {
 }
 
 let teardown = null
+let ro = null
 
 onMounted(() => {
   const c = canvas.value
@@ -920,7 +947,15 @@ onMounted(() => {
   if (!preview.state) preview.state = names[0] || ''
 
   teardown = setupInteractions(c)
+
   if (sheetUrl.value) loadSheet(sheetUrl.value)
+
+  // keep it centered + fit on initial layout changes
+  ro = new ResizeObserver(() => {
+    fitSheetToCanvas()
+  })
+  ro.observe(c)
+
   raf = requestAnimationFrame(tick)
 })
 
@@ -931,6 +966,7 @@ watch(sheetUrl, (url) => {
 onBeforeUnmount(() => {
   if (raf) cancelAnimationFrame(raf)
   if (teardown) teardown()
+  ro?.disconnect()
 })
 </script>
 
