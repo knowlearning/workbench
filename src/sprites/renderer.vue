@@ -451,7 +451,7 @@ function drawPreviewPanel(ctx, cw, ch) {
     const maxScaleX = Math.floor((cw2 * 0.9) / Math.max(1, sw))
     const maxScaleY = Math.floor((ch2 * 0.9) / Math.max(1, sh))
     const base = Math.max(1, Math.min(maxScaleX || 1, maxScaleY || 1))
-    const s = clamp(Math.round(base * clamp(view.scale / 2, 0.75, 2.5)), 1, 12)
+    const s = clamp(Math.round(base), 1, 12)
 
     const dx = Math.round(ax - ox * sw * s)
     const dy = Math.round(ay - oy * sh * s)
