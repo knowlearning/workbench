@@ -596,7 +596,7 @@ function draw(ctx, c, now) {
     ctx.fill()
 
     // label
-    const label = `${name}  [${x},${y},${w},${h}]  o(${ox.toFixed(3)},${oy.toFixed(3)})`
+    const label = name
     const pad = 4
     const tw = ctx.measureText(label).width
     const lx = sx
