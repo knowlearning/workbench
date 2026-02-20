@@ -881,7 +881,8 @@ function setupInteractions(c) {
 
   const onKey = (e) => {
     if (e.key === ' ') {
-      e.preventDefault()
+      //  TODO: make renderer input handling play nice
+      //e.preventDefault()
       setPlaying(!preview.playing)
       return
     }
