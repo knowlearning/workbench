@@ -649,11 +649,26 @@ function loadSheet(url) {
 }
 
 // ---------- interactions ----------
+function isTypingTarget(el) {
+  if (!el) return false
+
+  const e = el.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"]')
+  if (e) return true
+
+  const role = el.getAttribute?.('role')
+  if (role === 'textbox' || role === 'searchbox' || role === 'combobox') return true
+
+  return false
+}
+
 function setupInteractions(c) {
   let mode = 'none'
   let activeName = ''
   let activeHandle = ''
   let start = null
+
+  // only handle keys after interacting with the canvas
+  c.tabIndex = 0
 
   const pick = (wx, wy) => {
     const entries = Object.entries(frames.value)
@@ -691,6 +706,8 @@ function setupInteractions(c) {
   }
 
   const onDown = (e) => {
+    c.focus?.()
+
     const rect = c.getBoundingClientRect()
     const mx = e.clientX - rect.left
     const my = e.clientY - rect.top
@@ -896,7 +913,14 @@ function setupInteractions(c) {
   }
 
   const onKey = (e) => {
+    // don't steal keys while typing / interacting with form controls elsewhere
+    if (isTypingTarget(document.activeElement)) return
+
+    // only handle keys after interacting with this canvas
+    if (document.activeElement !== c) return
+
     if (e.key === ' ') {
+      e.preventDefault()
       setPlaying(!preview.playing)
       return
     }
