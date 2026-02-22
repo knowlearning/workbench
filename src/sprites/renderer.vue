@@ -21,7 +21,6 @@ const states = computed(() => props.sprite.states || {})
 const canvas = ref(null)
 
 let img = null
-let raf = 0
 
 // ---------- constants ----------
 const BG_COLOR = '#0b0f17'
@@ -39,20 +38,57 @@ const FRAME_FILL = 'rgba(255, 200, 0, 0.9)'
 const FRAME_HOVER_STROKE = 'rgba(255, 240, 140, 0.95)'
 const FRAME_HOVER_FILL = 'rgba(255, 240, 140, 0.95)'
 
-// all frames in active state
 const FRAME_STATE_STROKE = 'rgba(60, 220, 120, 0.95)'
 const FRAME_STATE_FILL = 'rgba(60, 220, 120, 0.9)'
 
-// active edit highlight (dragging/resizing/origin)
 const FRAME_ACTIVE_OUTLINE = 'rgba(0, 255, 180, 0.95)'
 const FRAME_ACTIVE_OUTLINE_W = 2
 
-// playhead highlight (current frame being previewed / animated)
 const FRAME_PLAYHEAD_OUTLINE = 'rgba(120, 180, 255, 0.95)'
 const FRAME_PLAYHEAD_OUTLINE_W = 2
 
 const ORIGIN_COLOR = 'rgba(0, 255, 180, 0.9)'
 const BORDER_COLOR = 'rgba(255,255,255,0.12)'
+
+// ---- timing (simple + reliable) ----
+// Prevent “speed-up” from:
+// 1) multiple RAF loops (token-guard)
+// 2) large dt spikes (tab switch / debugger / jank)
+const MAX_DT = 50 // ms
+
+let raf = 0
+let loopToken = 0
+let onVis = null
+
+function stopLoop() {
+  if (raf) cancelAnimationFrame(raf)
+  raf = 0
+  loopToken++
+}
+
+function startLoop() {
+  stopLoop()
+
+  const c = canvas.value
+  if (!c) return
+
+  const token = loopToken
+  let last = performance.now()
+
+  const frame = (now) => {
+    if (token !== loopToken) return
+
+    const dt = clamp(now - last, 0, MAX_DT)
+    last = now
+
+    const ctx = c.getContext('2d')
+    draw(ctx, c, dt)
+
+    raf = requestAnimationFrame(frame)
+  }
+
+  raf = requestAnimationFrame(frame)
+}
 
 // ---------- view ----------
 const view = {
@@ -66,7 +102,6 @@ const preview = {
   speed: 1,
   state: '',
   t: 0,
-  lastNow: 0,
   manualFrameName: '',
   ui: { x: 0, y: 0, w: 260, h: 220, pad: 10 }
 }
@@ -351,7 +386,6 @@ function activeStateFrameSet() {
   return new Set(st.sequence.map(s => s?.[0]).filter(Boolean))
 }
 
-// playhead = the frame the preview is currently showing (even if paused on a manual frame)
 function currentPlayheadFrameName() {
   if (activeFrame.value) return activeFrame.value
   if (preview.manualFrameName && frames.value[preview.manualFrameName]) return preview.manualFrameName
@@ -361,7 +395,6 @@ function currentPlayheadFrameName() {
   return pickDefaultFrameName()
 }
 
-// NOTE: hover intentionally NOT used for preview anymore
 function pickPreviewFrameName() {
   if (activeFrame.value) return activeFrame.value
   if (preview.manualFrameName && frames.value[preview.manualFrameName]) return preview.manualFrameName
@@ -386,7 +419,7 @@ function stepPreviewFrame(dir) {
   const current = currentPlayheadFrameName()
   const i = Math.max(0, order.indexOf(current))
   const n = order.length
-  const j = ((i + dir) % n + n) % n // wrap
+  const j = ((i + dir) % n + n) % n
 
   preview.playing = false
   preview.manualFrameName = order[j]
@@ -504,7 +537,7 @@ function drawPreviewPanel(ctx, cw, ch) {
   ctx.restore()
 }
 
-function draw(ctx, c, now) {
+function draw(ctx, c, dt) {
   resizeToDisplaySize(c)
 
   ctx.save()
@@ -517,9 +550,6 @@ function draw(ctx, c, now) {
   const cw = c.width / pixelRatio
   const ch = c.height / pixelRatio
 
-  if (!preview.lastNow) preview.lastNow = now
-  const dt = Math.max(0, now - preview.lastNow)
-  preview.lastNow = now
   if (preview.playing) preview.t += dt * preview.speed
 
   const playheadName = currentPlayheadFrameName()
@@ -540,7 +570,7 @@ function draw(ctx, c, now) {
   for (const [name, f] of Object.entries(frames.value)) {
     const rf = readFrame(f)
     if (!rf) continue
-    const { x, y, w, h, ox, oy } = rf
+    const { x, y, w, h } = rf
 
     const sx = x * view.scale + view.panX
     const sy = y * view.scale + view.panY
@@ -552,13 +582,11 @@ function draw(ctx, c, now) {
     const isHot = isActive || (name === hoverFrame.value && !activeFrame.value)
     const isInActiveState = stateSet.has(name)
 
-    // base rect stroke (state frames are green)
     ctx.lineWidth = 1
     if (isInActiveState) ctx.strokeStyle = FRAME_STATE_STROKE
     else ctx.strokeStyle = isHot ? FRAME_HOVER_STROKE : FRAME_STROKE
     ctx.strokeRect(sx, sy, sw, sh)
 
-    // playhead outline (current anim frame)
     if (isPlayhead && !isActive) {
       ctx.strokeStyle = FRAME_PLAYHEAD_OUTLINE
       ctx.lineWidth = FRAME_PLAYHEAD_OUTLINE_W
@@ -566,7 +594,6 @@ function draw(ctx, c, now) {
       ctx.lineWidth = 1
     }
 
-    // active edit outline wins
     if (isActive) {
       ctx.strokeStyle = FRAME_ACTIVE_OUTLINE
       ctx.lineWidth = FRAME_ACTIVE_OUTLINE_W
@@ -574,7 +601,6 @@ function draw(ctx, c, now) {
       ctx.lineWidth = 1
     }
 
-    // handles (state frames are green)
     const b = rectWorldBounds(f)
     const hx = (b.x1 + b.x2) / 2
     const hy = (b.y1 + b.y2) / 2
@@ -588,14 +614,12 @@ function draw(ctx, c, now) {
     else ctx.fillStyle = isHot ? FRAME_HOVER_FILL : FRAME_FILL
     for (const [px, py] of pts) ctx.fillRect(px - 3, py - 3, 6, 6)
 
-    // origin
     const op = originWorldPos(f)
     ctx.fillStyle = ORIGIN_COLOR
     ctx.beginPath()
     ctx.arc(op.x, op.y, 3, 0, Math.PI * 2)
     ctx.fill()
 
-    // label
     const label = name
     const pad = 4
     const tw = ctx.measureText(label).width
@@ -614,14 +638,6 @@ function draw(ctx, c, now) {
   ctx.strokeRect(0.5, 0.5, cw - 1, ch - 1)
 
   ctx.restore()
-}
-
-function tick(now) {
-  const c = canvas.value
-  if (!c) return
-  const ctx = c.getContext('2d')
-  draw(ctx, c, now || performance.now())
-  raf = requestAnimationFrame(tick)
 }
 
 function loadSheet(url) {
@@ -881,8 +897,6 @@ function setupInteractions(c) {
 
   const onKey = (e) => {
     if (e.key === ' ') {
-      //  TODO: make renderer input handling play nice
-      //e.preventDefault()
       setPlaying(!preview.playing)
       return
     }
@@ -951,13 +965,18 @@ onMounted(() => {
 
   if (sheetUrl.value) loadSheet(sheetUrl.value)
 
-  // keep it centered + fit on initial layout changes
   ro = new ResizeObserver(() => {
     fitSheetToCanvas()
   })
   ro.observe(c)
 
-  raf = requestAnimationFrame(tick)
+  // avoid huge dt on tab switch / debugger resume
+  onVis = () => {
+    if (!document.hidden) startLoop()
+  }
+  document.addEventListener('visibilitychange', onVis)
+
+  startLoop()
 })
 
 watch(sheetUrl, (url) => {
@@ -965,9 +984,10 @@ watch(sheetUrl, (url) => {
 })
 
 onBeforeUnmount(() => {
-  if (raf) cancelAnimationFrame(raf)
+  stopLoop()
   if (teardown) teardown()
   ro?.disconnect()
+  if (onVis) document.removeEventListener('visibilitychange', onVis)
 })
 </script>
 

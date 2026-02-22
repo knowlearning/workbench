@@ -11,7 +11,6 @@
   const ui = reactive(await Agent.state('ui'))
   const content = reactive(await Agent.state('content'))
   const draggingSidebar = ref(false)
-  const draggingPlayer = ref(false)
 
   ui.editingName = false
   if (ui.sidebarWidth === undefined) ui.sidebarWidth = 300
@@ -84,11 +83,6 @@
     ui.sidebarWidth = Math.max(0, ui.sidebarWidth + dx)
   }
 
-  function dragPlayer({ detail: { dx } }) {
-    console.log('DRAGGING PLAYER?', dx)
-    ui.playerWidth = Math.max(0, ui.playerWidth + dx)
-  }
-
   function removeInstance(id, index) {
     //  TODO: fix persistent splice
     const copy = JSON.parse(JSON.stringify(content[id].instances))
@@ -149,6 +143,10 @@
       '_blank',
       'toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=800,height=600'
     )
+  }
+
+  function onGutterDrag({ detail: { dx } }) {
+    ui.playerWidth = Math.max(0, ui.playerWidth + dx)
   }
 
 </script>
@@ -219,7 +217,6 @@
     </div>
     <div
       id="player"
-      :class="{ dragging: draggingPlayer }"
       :style="`
         width: ${ui.playerWidth}px;
         height: 100vh;
@@ -232,22 +229,6 @@
         :key="activeContent"
         :id="activeContent"
       />
-      <div
-        :style="`
-          width: 16px;
-          height: 100vh;
-          position: absolute;
-          right: -8px;
-          background: rgba(255, 0, 0, 0);
-          z-index: 1000000;
-          top: 0;
-          cursor: ew-resize;
-        `"
-        v-drag
-        @dragstart="draggingPlayer = true"
-        @drag="dragPlayer"
-        @dragend="draggingPlayer = false"
-      />
     </div>
     <div id="content">
       <Editor
@@ -257,6 +238,7 @@
         :resolveLanguage="resolveLanguage"
         :resolveWidget="resolveWidget"
         fill-height
+        @gutter-drag="onGutterDrag"
       />
     </div>
   </div>
