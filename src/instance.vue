@@ -161,13 +161,13 @@
     position: absolute;
     display: flex;
     flex-direction: column;
-    background: white;
+    background: light-dark(#f5f5f5, #1e1e1e);
     border-radius: 4px;
     box-shadow: rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;
   }
 
   .instance-header {
-    background: #EEEEEE;
+    background: light-dark(#EEEEEE, #1e1e1e);
     padding: 4px;
     cursor: move;
     border-bottom: 1px solid #DDD;

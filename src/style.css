@@ -10,10 +10,6 @@ body {
   overscroll-behavior: none;
 }
 
-html {
-  background: #FAFAFA;
-}
-
 html,
 body,
 #content,
@@ -41,4 +37,8 @@ body.dragging-directive-active iframe {
     background-color: Canvas;
     color: CanvasText;
   }
+}
+
+.cm-gutters {
+  cursor: ew-resize;
 }

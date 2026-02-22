@@ -47,7 +47,7 @@
 
 <style>
   .sidebar-content.active {
-    background: #888888;
+    background: light-dark(#888888, #444444);
   }
 
   .sidebar-content {

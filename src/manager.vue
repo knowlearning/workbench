@@ -186,9 +186,9 @@
         cursor: ew-resize;
         flex-shrink: 0;
         flex-grow: 0;
-        background: #F5F5F5;
-        border-left: 1px solid #ddd;
-        border-right: 1px solid #ddd;
+        background: light-dark(#EEEEEE, #222222);
+        border-left: 1px solid light-dark(#DDDDDD, #1A1A1A);
+        border-right: 1px solid light-dark(#DDDDDD, #1A1A1A);
       "
       v-drag
       @dragstart="draggingSidebar = true"
@@ -261,7 +261,7 @@
   }
 
   #sidebar {
-    background: #EEEEEE;
+    background: light-dark(#f5f5f5, #1e1e1e);
     overflow: hidden;
     display: flex;
     flex-direction: column;

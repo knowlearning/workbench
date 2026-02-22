@@ -1111,4 +1111,5 @@ canvas {
   user-select: none;
   pointer-events: none;
 }
+canvas:focus { outline: none; }
 </style>
