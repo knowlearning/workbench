@@ -1,3 +1,7 @@
+:root {
+  color-scheme: light dark;
+}
+
 html,
 body {
   margin: 0;
@@ -30,4 +34,11 @@ body.dragging-directive-active {
 
 body.dragging-directive-active iframe {
   pointer-events: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    background-color: Canvas;
+    color: CanvasText;
+  }
 }

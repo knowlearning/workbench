@@ -44,7 +44,10 @@
     `"
   >
     <Suspense>
-      <Component :is="component" v-bind="props" />
+      <Component
+        :is="component"
+        v-bind="props"
+      />
     </Suspense>
   </div>
 </template>
@@ -55,6 +58,5 @@
     top: 0;
     left: 0;
     overflow: hidden;
-    background: white;
   }
 </style>
