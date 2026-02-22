@@ -4,7 +4,12 @@
 
   const props = defineProps({ id: String })
   const state = reactive(await Agent.state(props.id))
+
+  const report = event => console.log(event)
 </script>
 <template>
-  <SpriteRenderer :sprite="state" />
+  <SpriteRenderer
+    :sprite="state"
+    @event="report"
+  />
 </template>

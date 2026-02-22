@@ -14,6 +14,8 @@ const props = defineProps({
   sprite: { type: Object, required: true }
 })
 
+const emit = defineEmits(['event'])
+
 const sheetUrl = computed(() => props.sprite.sheet)
 const frames = computed(() => props.sprite.frames || {})
 const states = computed(() => props.sprite.states || {})
@@ -108,6 +110,48 @@ const preview = {
 
 const activeFrame = ref('')
 const hoverFrame = ref('')
+
+// --- emits (single "event") + hover enter/exit/hover ---
+const framePath = (name) => ['frame', name || '']
+const seqPath = (name) => ['sequence', name || '']
+
+let lastHoverName = '' // '' means "none"
+let lastSelectSeq = null
+let lastCurrentName = null
+
+function emitEvent(type, path) {
+  emit('event', { type, path })
+}
+
+function handleHover(nextName) {
+  const next = nextName || ''
+  const prev = lastHoverName
+
+  if (next === prev) {
+    if (next) emitEvent('hover', framePath(next))
+    return
+  }
+
+  if (prev) emitEvent('exit', framePath(prev))
+  if (next) emitEvent('enter', framePath(next))
+  if (next) emitEvent('hover', framePath(next))
+
+  lastHoverName = next
+}
+
+function emitSelectSequence(name) {
+  const n = name || ''
+  if (n === lastSelectSeq) return
+  lastSelectSeq = n
+  emitEvent('select', seqPath(n))
+}
+
+function emitCurrent(name, force = false) {
+  const n = name || ''
+  if (!force && n === lastCurrentName) return
+  lastCurrentName = n
+  emitEvent('current', framePath(n))
+}
 
 const dpr = () => Math.max(1, window.devicePixelRatio || 1)
 
@@ -424,6 +468,7 @@ function stepPreviewFrame(dir) {
   preview.playing = false
   preview.manualFrameName = order[j]
   hoverFrame.value = ''
+  handleHover('')
 }
 
 function stepState(dir) {
@@ -432,9 +477,14 @@ function stepState(dir) {
   const i = Math.max(0, names.indexOf(preview.state))
   const n = names.length
   const j = ((i + dir) % n + n) % n
+
   preview.state = names[j]
   preview.t = 0
   preview.manualFrameName = ''
+
+  emitSelectSequence(preview.state)
+  lastCurrentName = null
+  emitCurrent(currentPlayheadFrameName(), true)
 }
 
 // ---------- render ----------
@@ -553,6 +603,8 @@ function draw(ctx, c, dt) {
   if (preview.playing) preview.t += dt * preview.speed
 
   const playheadName = currentPlayheadFrameName()
+  emitCurrent(playheadName)
+
   const stateSet = activeStateFrameSet()
 
   ctx.fillStyle = BG_COLOR
@@ -765,12 +817,17 @@ function setupInteractions(c) {
     const rect = c.getBoundingClientRect()
     const mx = e.clientX - rect.left
     const my = e.clientY - rect.top
+
     if (inPreview(mx, my)) {
       hoverFrame.value = ''
+      handleHover('')
       return
     }
+
     const p = pick(mx, my)
-    hoverFrame.value = p?.name || ''
+    const next = p?.name || ''
+    hoverFrame.value = next
+    handleHover(next)
   }
 
   const onMove = (e) => {
@@ -951,6 +1008,7 @@ function setupInteractions(c) {
 
     if (e.key === 'Escape') {
       hoverFrame.value = ''
+      handleHover('')
       activeFrame.value = ''
       preview.manualFrameName = ''
     }
@@ -985,6 +1043,11 @@ onMounted(() => {
   const names = listStateNames()
   if (!preview.state) preview.state = names[0] || ''
 
+  emitSelectSequence(preview.state)
+
+  lastCurrentName = null
+  emitCurrent(currentPlayheadFrameName(), true)
+
   teardown = setupInteractions(c)
 
   if (sheetUrl.value) loadSheet(sheetUrl.value)
@@ -1006,6 +1069,15 @@ onMounted(() => {
 watch(sheetUrl, (url) => {
   if (url) loadSheet(url)
 })
+
+watch(
+  () => preview.state,
+  (s) => {
+    emitSelectSequence(s)
+    lastCurrentName = null
+    emitCurrent(currentPlayheadFrameName(), true)
+  }
+)
 
 onBeforeUnmount(() => {
   stopLoop()
