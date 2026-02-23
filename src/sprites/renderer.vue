@@ -9,6 +9,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import * as themes from './themes.js'
 
 const props = defineProps({
   sprite: { type: Object, required: true }
@@ -24,33 +25,20 @@ const canvas = ref(null)
 
 let img = null
 
-// ---------- constants ----------
-const BG_COLOR = '#0b0f17'
-const PREVIEW_PANEL_BG = 'rgba(0,0,0,0.55)'
-const PREVIEW_PANEL_BORDER = 'rgba(255,255,255,0.18)'
-const PREVIEW_HEADER_BG = 'rgba(0,0,0,0.35)'
-const PREVIEW_GROUND = 'rgba(0,255,180,0.22)'
-const PREVIEW_CHECK_A = 'rgba(255,255,255,0.02)'
-const PREVIEW_CHECK_B = 'rgba(255,255,255,0.06)'
-const LABEL_BG = 'rgba(0,0,0,0.65)'
-const LABEL_FG = 'rgba(255,255,255,0.92)'
+// ---------- theme (light/dark) ----------
+const prefersDark = ref(true)
+let mq = null
+let onScheme = null
 
-const FRAME_STROKE = 'rgba(255, 200, 0, 0.85)'
-const FRAME_FILL = 'rgba(255, 200, 0, 0.9)'
-const FRAME_HOVER_STROKE = 'rgba(255, 240, 140, 0.95)'
-const FRAME_HOVER_FILL = 'rgba(255, 240, 140, 0.95)'
+function readPrefersDark() {
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+}
 
-const FRAME_STATE_STROKE = 'rgba(60, 220, 120, 0.95)'
-const FRAME_STATE_FILL = 'rgba(60, 220, 120, 0.9)'
+function setSchemeFromMedia() {
+  prefersDark.value = readPrefersDark()
+}
 
-const FRAME_ACTIVE_OUTLINE = 'rgba(0, 255, 180, 0.95)'
-const FRAME_ACTIVE_OUTLINE_W = 2
-
-const FRAME_PLAYHEAD_OUTLINE = 'rgba(120, 180, 255, 0.95)'
-const FRAME_PLAYHEAD_OUTLINE_W = 2
-
-const ORIGIN_COLOR = 'rgba(0, 255, 180, 0.9)'
-const BORDER_COLOR = 'rgba(255,255,255,0.12)'
+const theme = computed(() => (prefersDark.value ? themes.dark : themes.light))
 
 // ---- timing (simple + reliable) ----
 // Prevent “speed-up” from:
@@ -498,21 +486,23 @@ function drawPreviewPanel(ctx, cw, ch) {
   preview.ui.x = x
   preview.ui.y = y
 
+  const th = theme.value
+
   ctx.save()
 
-  ctx.fillStyle = PREVIEW_PANEL_BG
+  ctx.fillStyle = th.PREVIEW_PANEL_BG
   ctx.fillRect(x, y, w, h)
-  ctx.strokeStyle = PREVIEW_PANEL_BORDER
+  ctx.strokeStyle = th.PREVIEW_PANEL_BORDER
   ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1)
 
   const pad = preview.ui.pad
   const headerH = 46
-  ctx.fillStyle = PREVIEW_HEADER_BG
+  ctx.fillStyle = th.PREVIEW_HEADER_BG
   ctx.fillRect(x, y, w, headerH)
 
   ctx.font = '12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
   ctx.textBaseline = 'top'
-  ctx.fillStyle = LABEL_FG
+  ctx.fillStyle = th.LABEL_FG
 
   const stateNames = listStateNames()
   if (!preview.state) preview.state = stateNames[0] || ''
@@ -531,8 +521,8 @@ function drawPreviewPanel(ctx, cw, ch) {
   const ch2 = h - headerH - pad * 2
 
   if (frameName && frameName === activeFrame.value) {
-    ctx.strokeStyle = FRAME_ACTIVE_OUTLINE
-    ctx.lineWidth = FRAME_ACTIVE_OUTLINE_W
+    ctx.strokeStyle = th.FRAME_ACTIVE_OUTLINE
+    ctx.lineWidth = 2
     ctx.strokeRect(cx - 3, cy - 3, cw2 + 6, ch2 + 6)
     ctx.lineWidth = 1
   }
@@ -541,14 +531,14 @@ function drawPreviewPanel(ctx, cw, ch) {
   for (let yy = 0; yy < ch2; yy += cell) {
     for (let xx = 0; xx < cw2; xx += cell) {
       const v = ((xx / cell) ^ (yy / cell)) & 1
-      ctx.fillStyle = v ? PREVIEW_CHECK_B : PREVIEW_CHECK_A
+      ctx.fillStyle = v ? th.PREVIEW_CHECK_B : th.PREVIEW_CHECK_A
       ctx.fillRect(cx + xx, cy + yy, cell, cell)
     }
   }
 
   const ax = cx + cw2 / 2
   const ay = cy + ch2 * 0.82
-  ctx.strokeStyle = PREVIEW_GROUND
+  ctx.strokeStyle = th.PREVIEW_GROUND
   ctx.beginPath()
   ctx.moveTo(cx + 6, ay + 0.5)
   ctx.lineTo(cx + cw2 - 6, ay + 0.5)
@@ -573,14 +563,14 @@ function drawPreviewPanel(ctx, cw, ch) {
     ctx.imageSmoothingEnabled = false
     ctx.drawImage(img, sx, sy, sw, sh, dx, dy, sw * s, sh * s)
 
-    ctx.fillStyle = ORIGIN_COLOR
+    ctx.fillStyle = th.ORIGIN_COLOR
     ctx.beginPath()
     ctx.arc(Math.round(ax), Math.round(ay), 3, 0, Math.PI * 2)
     ctx.fill()
 
     ctx.restore()
   } else {
-    ctx.fillStyle = 'rgba(255,255,255,0.6)'
+    ctx.fillStyle = prefersDark.value ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'
     ctx.fillText('no frame/image', cx, cy + 6)
   }
 
@@ -589,6 +579,8 @@ function drawPreviewPanel(ctx, cw, ch) {
 
 function draw(ctx, c, dt) {
   resizeToDisplaySize(c)
+
+  const th = theme.value
 
   ctx.save()
   ctx.setTransform(1, 0, 0, 1, 0, 0)
@@ -607,7 +599,7 @@ function draw(ctx, c, dt) {
 
   const stateSet = activeStateFrameSet()
 
-  ctx.fillStyle = BG_COLOR
+  ctx.fillStyle = th.BG_COLOR
   ctx.fillRect(0, 0, cw, ch)
 
   if (img?.complete && img.naturalWidth) {
@@ -635,20 +627,20 @@ function draw(ctx, c, dt) {
     const isInActiveState = stateSet.has(name)
 
     ctx.lineWidth = 1
-    if (isInActiveState) ctx.strokeStyle = FRAME_STATE_STROKE
-    else ctx.strokeStyle = isHot ? FRAME_HOVER_STROKE : FRAME_STROKE
+    if (isInActiveState) ctx.strokeStyle = th.FRAME_STATE_STROKE
+    else ctx.strokeStyle = isHot ? th.FRAME_HOVER_STROKE : th.FRAME_STROKE
     ctx.strokeRect(sx, sy, sw, sh)
 
     if (isPlayhead && !isActive) {
-      ctx.strokeStyle = FRAME_PLAYHEAD_OUTLINE
-      ctx.lineWidth = FRAME_PLAYHEAD_OUTLINE_W
+      ctx.strokeStyle = th.FRAME_PLAYHEAD_OUTLINE
+      ctx.lineWidth = 2
       ctx.strokeRect(sx, sy, sw, sh)
       ctx.lineWidth = 1
     }
 
     if (isActive) {
-      ctx.strokeStyle = FRAME_ACTIVE_OUTLINE
-      ctx.lineWidth = FRAME_ACTIVE_OUTLINE_W
+      ctx.strokeStyle = th.FRAME_ACTIVE_OUTLINE
+      ctx.lineWidth = 2
       ctx.strokeRect(sx, sy, sw, sh)
       ctx.lineWidth = 1
     }
@@ -662,12 +654,12 @@ function draw(ctx, c, dt) {
       [b.x2, b.y2], [hx, b.y2], [b.x1, b.y2],
       [b.x1, hy]
     ]
-    if (isInActiveState) ctx.fillStyle = FRAME_STATE_FILL
-    else ctx.fillStyle = isHot ? FRAME_HOVER_FILL : FRAME_FILL
+    if (isInActiveState) ctx.fillStyle = th.FRAME_STATE_FILL
+    else ctx.fillStyle = isHot ? th.FRAME_HOVER_FILL : th.FRAME_FILL
     for (const [px, py] of pts) ctx.fillRect(px - 3, py - 3, 6, 6)
 
     const op = originWorldPos(f)
-    ctx.fillStyle = ORIGIN_COLOR
+    ctx.fillStyle = th.ORIGIN_COLOR
     ctx.beginPath()
     ctx.arc(op.x, op.y, 3, 0, Math.PI * 2)
     ctx.fill()
@@ -678,15 +670,15 @@ function draw(ctx, c, dt) {
     const lx = sx
     const ly = sy - 16
 
-    ctx.fillStyle = LABEL_BG
+    ctx.fillStyle = th.LABEL_BG
     ctx.fillRect(lx, ly, tw + pad * 2, 16)
-    ctx.fillStyle = LABEL_FG
+    ctx.fillStyle = th.LABEL_FG
     ctx.fillText(label, lx + pad, ly + 2)
   }
 
   drawPreviewPanel(ctx, cw, ch)
 
-  ctx.strokeStyle = BORDER_COLOR
+  ctx.strokeStyle = th.BORDER_COLOR
   ctx.strokeRect(0.5, 0.5, cw - 1, ch - 1)
 
   ctx.restore()
@@ -1040,6 +1032,20 @@ onMounted(() => {
   const c = canvas.value
   if (!c) return
 
+  setSchemeFromMedia()
+  mq = window.matchMedia('(prefers-color-scheme: dark)')
+  onScheme = () => {
+    setSchemeFromMedia()
+    // force an immediate redraw so it flips instantly even if paused
+    const c2 = canvas.value
+    if (c2) {
+      const ctx2 = c2.getContext('2d')
+      draw(ctx2, c2, 0)
+    }
+  }
+  if (mq.addEventListener) mq.addEventListener('change', onScheme)
+  else mq.addListener(onScheme)
+
   const names = listStateNames()
   if (!preview.state) preview.state = names[0] || ''
 
@@ -1084,6 +1090,11 @@ onBeforeUnmount(() => {
   if (teardown) teardown()
   ro?.disconnect()
   if (onVis) document.removeEventListener('visibilitychange', onVis)
+
+  if (mq && onScheme) {
+    if (mq.removeEventListener) mq.removeEventListener('change', onScheme)
+    else mq.removeListener(onScheme)
+  }
 })
 </script>
 
@@ -1093,6 +1104,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   min-height: 420px;
+  background: #0b0f17;
 }
 canvas {
   width: 100%;
@@ -1112,4 +1124,16 @@ canvas {
   pointer-events: none;
 }
 canvas:focus { outline: none; }
+
+@media (prefers-color-scheme: light) {
+  .wrap {
+    background: #f6f8fb;
+  }
+
+  .hint {
+    color: rgba(0,0,0,0.72);
+    background: rgba(255,255,255,0.75);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+  }
+}
 </style>
