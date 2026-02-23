@@ -953,9 +953,23 @@ function setupInteractions(c) {
       return
     }
 
+    // Trackpads often emit deltaX for sideways scroll; shift+wheel is also commonly "horizontal scroll".
+    // Treat these as panning (including diagonal two-finger scroll), not zoom.
+    const wantsPan = e.shiftKey || Math.abs(e.deltaX) > 0
+
+    // If you want pinch-to-zoom to still work on trackpads, keep zoom when ctrlKey is true
+    // (many browsers set ctrlKey during pinch gestures).
+    const wantsZoom = !wantsPan || e.ctrlKey
+
+    if (!wantsZoom) {
+      view.panX -= e.deltaX
+      view.panY -= e.deltaY
+      return
+    }
+
     const prev = view.scale
     const factor = Math.exp(-e.deltaY * 0.001)
-    view.scale = Math.min(20, Math.max(0.25, view.scale * factor))
+    view.scale = clamp(view.scale * factor, 0.25, 20)
 
     view.panX = mx - (mx - view.panX) * (view.scale / prev)
     view.panY = my - (my - view.panY) * (view.scale / prev)
