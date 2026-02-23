@@ -2,6 +2,7 @@
   import { reactive } from 'vue'
   import SpriteRenderer from './sprites/renderer.vue'
 
+  const emit = defineEmits(['event'])
   const props = defineProps({ id: String })
   const state = reactive(await Agent.state(props.id))
 
@@ -10,6 +11,6 @@
 <template>
   <SpriteRenderer
     :sprite="state"
-    @event="report"
+    @event="e => emit('event', e)"
   />
 </template>

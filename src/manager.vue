@@ -149,6 +149,10 @@
     ui.playerWidth = Math.max(0, ui.playerWidth + dx)
   }
 
+  function handlePlayerEvent(event) {
+    console.log('player event', event)
+  }
+
 </script>
 
 <template>
@@ -228,6 +232,7 @@
       <Player
         :key="activeContent"
         :id="activeContent"
+        @event="handlePlayerEvent"
       />
     </div>
     <div id="content">
