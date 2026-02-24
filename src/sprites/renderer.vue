@@ -715,6 +715,20 @@ function draw(ctx, c, dt) {
   if (img?.complete && img.naturalWidth) {
     ctx.imageSmoothingEnabled = false
     ctx.drawImage(img, view.panX, view.panY, img.naturalWidth * view.scale, img.naturalHeight * view.scale)
+
+    // faint border around the sprite sheet
+    const sw = img.naturalWidth * view.scale
+    const sh = img.naturalHeight * view.scale
+
+    ctx.save()
+    ctx.imageSmoothingEnabled = true
+    ctx.lineWidth = 4
+    ctx.strokeStyle = th.SHEET_BORDER || (prefersDark.value ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)')
+
+    const half = ctx.lineWidth / 2
+    ctx.strokeRect(view.panX - half, view.panY - half, sw + ctx.lineWidth, sh + ctx.lineWidth)
+
+    ctx.restore()
   }
 
   ctx.imageSmoothingEnabled = true

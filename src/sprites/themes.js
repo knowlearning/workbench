@@ -21,7 +21,9 @@ export const light = {
   FRAME_PLAYHEAD_OUTLINE: 'rgba(40, 110, 200, 0.9)',
 
   ORIGIN_COLOR: 'rgba(0, 140, 110, 0.9)',
-  BORDER_COLOR: 'rgba(0,0,0,0.10)'
+  BORDER_COLOR: 'rgba(0,0,0,0.10)',
+
+  SHEET_BORDER: 'rgba(0,0,0,0.12)'
 }
 
 export const dark = {
@@ -47,5 +49,7 @@ export const dark = {
   FRAME_PLAYHEAD_OUTLINE: 'rgba(120, 180, 255, 0.95)',
 
   ORIGIN_COLOR: 'rgba(0, 255, 180, 0.9)',
-  BORDER_COLOR: 'rgba(255,255,255,0.12)'
+  BORDER_COLOR: 'rgba(255,255,255,0.12)',
+
+  SHEET_BORDER: 'rgba(255,255,255,0.12)'
 }
