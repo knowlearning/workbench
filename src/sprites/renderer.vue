@@ -41,9 +41,6 @@ function setSchemeFromMedia() {
 const theme = computed(() => (prefersDark.value ? themes.dark : themes.light))
 
 // ---- timing (simple + reliable) ----
-// Prevent “speed-up” from:
-// 1) multiple RAF loops (token-guard)
-// 2) large dt spikes (tab switch / debugger / jank)
 const MAX_DT = 50 // ms
 
 let raf = 0
@@ -177,9 +174,12 @@ function fitSheetToCanvas() {
 
   const s = Math.min(availW / w, availH / h)
 
-  view.scale = clamp(s, 0.25, 20)
+  // allow fit to go smaller than viewport (don’t enforce 0.25 floor)
+  view.scale = clamp(s, 0.01, 40)
   view.panX = (cw - w * view.scale) / 2
   view.panY = (ch - h * view.scale) / 2
+
+  snapPanToDevicePixels()
 }
 
 // ---------- helpers ----------
@@ -194,6 +194,13 @@ function roundInt(v) {
   return Math.round(v)
 }
 
+// Optional but recommended for pixel art (reduces shimmer)
+function snapPanToDevicePixels() {
+  const pr = dpr()
+  view.panX = Math.round(view.panX * pr) / pr
+  view.panY = Math.round(view.panY * pr) / pr
+}
+
 function worldToSheet(wx, wy) {
   return {
     x: (wx - view.panX) / view.scale,
@@ -206,6 +213,109 @@ function sheetToWorld(x, y) {
     x: x * view.scale + view.panX,
     y: y * view.scale + view.panY
   }
+}
+
+function sheetWorldRect(scale = view.scale, panX = view.panX, panY = view.panY) {
+  const w = img?.naturalWidth || 0
+  const h = img?.naturalHeight || 0
+  const sw = w * scale
+  const sh = h * scale
+  return { x1: panX, y1: panY, x2: panX + sw, y2: panY + sh }
+}
+
+// --- zoom/pan constraints (preferred behavior) ---
+function fitScaleForCanvas(cw, ch) {
+  if (!img?.naturalWidth || !img?.naturalHeight) return 0.25
+
+  const availW = Math.max(1, cw - FIT_PAD * 2)
+  const availH = Math.max(1, ch - FIT_PAD * 2)
+
+  const s = Math.min(availW / img.naturalWidth, availH / img.naturalHeight)
+  return clamp(s, 0.01, 20)
+}
+
+// ---------- NEW: pan bounds + settle animation (post-zoom) ----------
+// ---------- UPDATED: pan bounds (edge-to-opposite-edge constraints) ----------
+function panBoundsForAxis(cLen, sLen) {
+  // image rect is [pan, pan + sLen]
+  // Constraints:
+  //   pan + sLen >= 0   (right/bottom never past left/top)
+  //   pan <= cLen       (left/top never past right/bottom)
+  // So:
+  //   pan >= -sLen
+  //   pan <= cLen
+  return [-sLen, cLen]
+}
+
+function clampPanToBounds(cw, ch, scale = view.scale, panX = view.panX, panY = view.panY) {
+  if (!img?.naturalWidth || !img?.naturalHeight) return { panX, panY }
+
+  const sw = img.naturalWidth * scale
+  const sh = img.naturalHeight * scale
+
+  const [xMin, xMax] = panBoundsForAxis(cw, sw)
+  const [yMin, yMax] = panBoundsForAxis(ch, sh)
+
+  return {
+    panX: clamp(panX, xMin, xMax),
+    panY: clamp(panY, yMin, yMax)
+  }
+}
+
+function nearestPanInBounds(cw, ch) {
+  return clampPanToBounds(cw, ch)
+}
+
+let zoomSettleRaf = 0
+let zoomSettleTimer = 0
+
+function stopZoomSettle() {
+  if (zoomSettleRaf) cancelAnimationFrame(zoomSettleRaf)
+  zoomSettleRaf = 0
+  clearTimeout(zoomSettleTimer)
+  zoomSettleTimer = 0
+}
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3)
+}
+
+function settlePanToBounds(cw, ch) {
+  stopZoomSettle()
+
+  const fromX = view.panX
+  const fromY = view.panY
+  const { panX: toX, panY: toY } = nearestPanInBounds(cw, ch)
+
+  if (Math.abs(toX - fromX) < 0.01 && Math.abs(toY - fromY) < 0.01) return
+
+  const dur = 180
+  const t0 = performance.now()
+
+  const step = (now) => {
+    const t = clamp((now - t0) / dur, 0, 1)
+    const k = easeOutCubic(t)
+
+    view.panX = fromX + (toX - fromX) * k
+    view.panY = fromY + (toY - fromY) * k
+
+    if (t >= 1) {
+      snapPanToDevicePixels()
+      zoomSettleRaf = 0
+      return
+    }
+
+    zoomSettleRaf = requestAnimationFrame(step)
+  }
+
+  zoomSettleRaf = requestAnimationFrame(step)
+}
+
+function scheduleZoomSettle(cw, ch) {
+  clearTimeout(zoomSettleTimer)
+  zoomSettleTimer = setTimeout(() => {
+    settlePanToBounds(cw, ch)
+  }, 90)
 }
 
 // Non-mutating read (defaults/clamp without writing back)
@@ -278,11 +388,11 @@ function hitHandle(worldX, worldY, f) {
     { k: 'nw', x: b.x1, y: b.y1 },
     { k: 'n', x: hx, y: b.y1 },
     { k: 'ne', x: b.x2, y: b.y1 },
-    { k: 'e', x: b.x2, y: hy },
+    { k: 'e', x: b.x2, y: (b.y1 + b.y2) / 2 },
     { k: 'se', x: b.x2, y: b.y2 },
     { k: 's', x: hx, y: b.y2 },
     { k: 'sw', x: b.x1, y: b.y2 },
-    { k: 'w', x: b.x1, y: hy }
+    { k: 'w', x: b.x1, y: (b.y1 + b.y2) / 2 }
   ]
 
   for (const p of pts) {
@@ -825,16 +935,32 @@ function setupInteractions(c) {
   const onMove = (e) => {
     if (mode === 'none' || !start) return
 
+    // keep backing store synced for consistent cw/ch
+    resizeToDisplaySize(c)
+
     const rect = c.getBoundingClientRect()
-    const mx = e.clientX - rect.left
-    const my = e.clientY - rect.top
+    const pr = dpr()
+    const cw = c.width / pr
+    const ch = c.height / pr
+
+    // convert rect-space mouse to drawing space
+    const sx = rect.width ? cw / rect.width : 1
+    const sy = rect.height ? ch / rect.height : 1
+
+    const mx = (e.clientX - rect.left) * sx
+    const my = (e.clientY - rect.top) * sy
     const sp = worldToSheet(mx, my)
 
     if (mode === 'pan') {
-      const dx = e.clientX - start.clientX
-      const dy = e.clientY - start.clientY
+      const dx = (e.clientX - start.clientX) * sx
+      const dy = (e.clientY - start.clientY) * sy
       view.panX = start.panX + dx
       view.panY = start.panY + dy
+
+      const t = clampPanToBounds(cw, ch)
+      view.panX = t.panX
+      view.panY = t.panY
+      snapPanToDevicePixels()
       return
     }
 
@@ -940,12 +1066,27 @@ function setupInteractions(c) {
     c.releasePointerCapture?.(e.pointerId)
   }
 
+  // ---------- NEW WHEEL: cursor-anchored zoom + post-zoom settle (no center zoom ever) ----------
   const onWheel = (e) => {
     e.preventDefault()
 
+    // ensure cw/ch match draw() space
+    resizeToDisplaySize(c)
+
     const rect = c.getBoundingClientRect()
-    const mx = e.clientX - rect.left
-    const my = e.clientY - rect.top
+    const pr = dpr()
+    const cw = c.width / pr
+    const ch = c.height / pr
+
+    // rect-space mouse
+    const mxRect = e.clientX - rect.left
+    const myRect = e.clientY - rect.top
+
+    // convert to drawing space
+    const sx = rect.width ? cw / rect.width : 1
+    const sy = rect.height ? ch / rect.height : 1
+    const mx = mxRect * sx
+    const my = myRect * sy
 
     if (inPreview(mx, my)) {
       const factor = Math.exp(-e.deltaY * 0.001)
@@ -953,33 +1094,48 @@ function setupInteractions(c) {
       return
     }
 
-    // Trackpads often emit deltaX for sideways scroll; shift+wheel is also commonly "horizontal scroll".
-    // Treat these as panning (including diagonal two-finger scroll), not zoom.
     const wantsPan = e.shiftKey || Math.abs(e.deltaX) > 0
-
-    // If you want pinch-to-zoom to still work on trackpads, keep zoom when ctrlKey is true
-    // (many browsers set ctrlKey during pinch gestures).
     const wantsZoom = !wantsPan || e.ctrlKey
 
     if (!wantsZoom) {
-      view.panX -= e.deltaX
-      view.panY -= e.deltaY
+      view.panX -= e.deltaX * sx
+      view.panY -= e.deltaY * sy
+
+      const t = clampPanToBounds(cw, ch)
+      view.panX = t.panX
+      view.panY = t.panY
+      snapPanToDevicePixels()
       return
     }
 
-    const prev = view.scale
-    const factor = Math.exp(-e.deltaY * 0.001)
-    view.scale = clamp(view.scale * factor, 0.25, 20)
+    if (!img?.naturalWidth || !img?.naturalHeight) return
 
-    view.panX = mx - (mx - view.panX) * (view.scale / prev)
-    view.panY = my - (my - view.panY) * (view.scale / prev)
+    stopZoomSettle()
+
+    const prevScale = view.scale
+    const factor = Math.exp(-e.deltaY * 0.001)
+
+    const fit = fitScaleForCanvas(cw, ch)
+    const minScale = Math.max(0.01, fit * 0.1)
+    const maxScale = 40
+
+    const nextScale = clamp(prevScale * factor, minScale, maxScale)
+    if (nextScale === prevScale) return
+
+    // ALWAYS keep cursor fixed at same image coordinate:
+    const sheetX = (mx - view.panX) / prevScale
+    const sheetY = (my - view.panY) / prevScale
+
+    view.scale = nextScale
+    view.panX = mx - sheetX * nextScale
+    view.panY = my - sheetY * nextScale
+
+    // Do not clamp during the zoom gesture; settle after zoom ends:
+    scheduleZoomSettle(cw, ch)
   }
 
   const onKey = (e) => {
-    // don't steal keys while typing / interacting with form controls elsewhere
     if (isTypingTarget(document.activeElement)) return
-
-    // only handle keys after interacting with this canvas
     if (document.activeElement !== c) return
 
     if (e.key === ' ') {
@@ -1036,6 +1192,7 @@ function setupInteractions(c) {
     window.removeEventListener('keydown', onKey)
     c.removeEventListener('wheel', onWheel)
     clearTimeout(logT)
+    stopZoomSettle()
   }
 }
 
@@ -1050,7 +1207,6 @@ onMounted(() => {
   mq = window.matchMedia('(prefers-color-scheme: dark)')
   onScheme = () => {
     setSchemeFromMedia()
-    // force an immediate redraw so it flips instantly even if paused
     const c2 = canvas.value
     if (c2) {
       const ctx2 = c2.getContext('2d')
@@ -1077,7 +1233,6 @@ onMounted(() => {
   })
   ro.observe(c)
 
-  // avoid huge dt on tab switch / debugger resume
   onVis = () => {
     if (!document.hidden) startLoop()
   }
@@ -1104,6 +1259,8 @@ onBeforeUnmount(() => {
   if (teardown) teardown()
   ro?.disconnect()
   if (onVis) document.removeEventListener('visibilitychange', onVis)
+
+  stopZoomSettle()
 
   if (mq && onScheme) {
     if (mq.removeEventListener) mq.removeEventListener('change', onScheme)
