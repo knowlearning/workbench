@@ -1,9 +1,6 @@
 <template>
   <div class="wrap">
     <canvas ref="canvas" />
-    <div class="hint">
-      Drag to pan • Wheel to zoom • Click preview to play/pause • ←/→ steps frames (wraps, pauses) • ↑/↓ cycles states
-    </div>
   </div>
 </template>
 
@@ -817,16 +814,32 @@ function loadSheet(url) {
 }
 
 // ---------- interactions ----------
-function isTypingTarget(el) {
-  if (!el) return false
+function isTextInputLike(el) {
+  if (!el || el === document.body || el === document.documentElement) return false
 
-  const e = el.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"]')
-  if (e) return true
+  if (el.matches?.('textarea, select')) return true
+
+  if (el.matches?.('input')) {
+    const type = (el.getAttribute('type') || 'text').toLowerCase()
+    return !['button', 'checkbox', 'radio', 'range', 'color', 'file', 'submit', 'reset'].includes(type)
+  }
+
+  if (el.isContentEditable) return true
+  const ce = el.closest?.('[contenteditable=""], [contenteditable="true"]')
+  if (ce) return true
 
   const role = el.getAttribute?.('role')
-  if (role === 'textbox' || role === 'searchbox' || role === 'combobox') return true
+  if (role && ['textbox', 'searchbox', 'combobox'].includes(role)) return true
 
   return false
+}
+
+function isTypingContext(evt) {
+  const path = evt.composedPath?.() || []
+  for (const n of path) {
+    if (n && n.nodeType === 1 && isTextInputLike(n)) return true
+  }
+  return isTextInputLike(document.activeElement)
 }
 
 function setupInteractions(c) {
@@ -834,9 +847,6 @@ function setupInteractions(c) {
   let activeName = ''
   let activeHandle = ''
   let start = null
-
-  // only handle keys after interacting with the canvas
-  c.tabIndex = 0
 
   const pick = (wx, wy) => {
     const entries = Object.entries(frames.value)
@@ -874,8 +884,6 @@ function setupInteractions(c) {
   }
 
   const onDown = (e) => {
-    c.focus?.()
-
     const rect = c.getBoundingClientRect()
     const mx = e.clientX - rect.left
     const my = e.clientY - rect.top
@@ -1149,8 +1157,7 @@ function setupInteractions(c) {
   }
 
   const onKey = (e) => {
-    if (isTypingTarget(document.activeElement)) return
-    if (document.activeElement !== c) return
+    if (isTypingContext(e)) return
 
     if (e.key === ' ') {
       e.preventDefault()
@@ -1284,41 +1291,24 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.wrap {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  min-height: 420px;
-  background: #0b0f17;
-}
-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-.hint {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
-  font: 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-  color: rgba(255,255,255,0.75);
-  background: rgba(0,0,0,0.45);
-  padding: 6px 8px;
-  border-radius: 8px;
-  user-select: none;
-  pointer-events: none;
-}
-canvas:focus { outline: none; }
 
-@media (prefers-color-scheme: light) {
   .wrap {
-    background: #f6f8fb;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 420px;
   }
 
-  .hint {
-    color: rgba(0,0,0,0.72);
-    background: rgba(255,255,255,0.75);
-    box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
   }
-}
+
+  @media (prefers-color-scheme: light) {
+    .wrap {
+      background: #f6f8fb;
+    }
+  }
+
 </style>
