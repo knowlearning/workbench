@@ -1250,7 +1250,35 @@ onMounted(() => {
   if (sheetUrl.value) loadSheet(sheetUrl.value)
 
   ro = new ResizeObserver(() => {
-    fitSheetToCanvas()
+    const c = canvas.value
+    if (!c) return
+    resizeToDisplaySize(c)
+    if (!img?.complete || !img.naturalWidth || !img.naturalHeight) return
+
+    const pixelRatio = dpr()
+    const cw = c.width / pixelRatio
+    const ch = c.height / pixelRatio
+
+    // Apply zoom constraint (same bounds as scroll/pinch zoom)
+    const fit = fitScaleForCanvas(cw, ch)
+    const minScale = Math.max(0.01, fit * 0.1)
+    const maxScale = 40
+    const newScale = clamp(view.scale, minScale, maxScale)
+
+    if (newScale !== view.scale) {
+      // Keep the center of the sprite sheet at the same canvas position
+      const cx = img.naturalWidth / 2
+      const cy = img.naturalHeight / 2
+      view.panX += cx * (view.scale - newScale)
+      view.panY += cy * (view.scale - newScale)
+      view.scale = newScale
+    }
+
+    // Apply pan constraints
+    const { panX, panY } = clampPanToBounds(cw, ch)
+    view.panX = panX
+    view.panY = panY
+    snapPanToDevicePixels()
   })
   ro.observe(c)
 
