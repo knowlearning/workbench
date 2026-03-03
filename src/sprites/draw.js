@@ -101,12 +101,6 @@ export function createDraw({ view, preview, getImg, setImg, getCanvas,
       const ax = Math.round(cx + edgePad + maxLeft * s + (avW - totalW * s) / 2)
       const ay = Math.round(cy + edgePad + maxTop  * s + (avH - totalH * s) / 2)
 
-      ctx.strokeStyle = th.PREVIEW_GROUND
-      ctx.beginPath()
-      ctx.moveTo(cx + 6, ay + 0.5)
-      ctx.lineTo(cx + cw2 - 6, ay + 0.5)
-      ctx.stroke()
-
       ctx.save()
       ctx.beginPath()
       ctx.rect(cx, cy, cw2, ch2)
