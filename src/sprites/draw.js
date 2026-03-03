@@ -65,25 +65,47 @@ export function createDraw({ view, preview, getImg, setImg, getCanvas,
       }
     }
 
-    const ax = cx + cw2 / 2
-    const ay = cy + ch2 * 0.82
-    ctx.strokeStyle = th.PREVIEW_GROUND
-    ctx.beginPath()
-    ctx.moveTo(cx + 6, ay + 0.5)
-    ctx.lineTo(cx + cw2 - 6, ay + 0.5)
-    ctx.stroke()
-
     const img = getImg()
     if (img?.complete && img.naturalWidth && rf) {
       const { x: sx, y: sy, w: sw, h: sh, ox, oy } = rf
 
-      const maxScaleX = Math.floor((cw2 * 0.9) / Math.max(1, sw))
-      const maxScaleY = Math.floor((ch2 * 0.9) / Math.max(1, sh))
-      const base = Math.max(1, Math.min(maxScaleX || 1, maxScaleY || 1))
-      const s = clamp(Math.round(base), 1, 12)
+      // Combined origin-relative bounding box across all frames in the current state.
+      // Each frame extends (ox*w) left, ((1-ox)*w) right, (oy*h) up, ((1-oy)*h) down
+      // from its origin. The max in each direction determines the envelope.
+      let maxLeft = 0, maxRight = 0, maxTop = 0, maxBottom = 0
+      for (const name of player.previewFrameOrder()) {
+        const rff = frameOps.readFrame(frames.value[name])
+        if (!rff) continue
+        maxLeft   = Math.max(maxLeft,   rff.ox * rff.w)
+        maxRight  = Math.max(maxRight,  (1 - rff.ox) * rff.w)
+        maxTop    = Math.max(maxTop,    rff.oy * rff.h)
+        maxBottom = Math.max(maxBottom, (1 - rff.oy) * rff.h)
+      }
+      if (maxLeft + maxRight === 0 && maxTop + maxBottom === 0) {
+        maxLeft = ox * sw; maxRight = (1 - ox) * sw
+        maxTop  = oy * sh; maxBottom = (1 - oy) * sh
+      }
 
-      const dx = Math.round(ax - ox * sw * s)
-      const dy = Math.round(ay - oy * sh * s)
+      // Largest uniform scale where the combined envelope fits the content area
+      const edgePad = 4
+      const avW = cw2 - 2 * edgePad
+      const avH = ch2 - 2 * edgePad
+      const totalW = maxLeft + maxRight
+      const totalH = maxTop + maxBottom
+      let maxS = 12
+      if (totalW > 0) maxS = Math.min(maxS, avW / totalW)
+      if (totalH > 0) maxS = Math.min(maxS, avH / totalH)
+      const s = maxS >= 1 ? Math.max(1, Math.floor(maxS)) : Math.max(0.1, maxS)
+
+      // Origin position: center the combined envelope in the content area
+      const ax = Math.round(cx + edgePad + maxLeft * s + (avW - totalW * s) / 2)
+      const ay = Math.round(cy + edgePad + maxTop  * s + (avH - totalH * s) / 2)
+
+      ctx.strokeStyle = th.PREVIEW_GROUND
+      ctx.beginPath()
+      ctx.moveTo(cx + 6, ay + 0.5)
+      ctx.lineTo(cx + cw2 - 6, ay + 0.5)
+      ctx.stroke()
 
       ctx.save()
       ctx.beginPath()
@@ -91,11 +113,12 @@ export function createDraw({ view, preview, getImg, setImg, getCanvas,
       ctx.clip()
 
       ctx.imageSmoothingEnabled = false
-      ctx.drawImage(img, sx, sy, sw, sh, dx, dy, sw * s, sh * s)
+      ctx.drawImage(img, sx, sy, sw, sh,
+        Math.round(ax - ox * sw * s), Math.round(ay - oy * sh * s), sw * s, sh * s)
 
       ctx.fillStyle = th.ORIGIN_COLOR
       ctx.beginPath()
-      ctx.arc(Math.round(ax), Math.round(ay), 3, 0, Math.PI * 2)
+      ctx.arc(ax, ay, 3, 0, Math.PI * 2)
       ctx.fill()
 
       ctx.restore()

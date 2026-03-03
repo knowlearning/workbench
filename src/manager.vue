@@ -150,7 +150,8 @@
   }
 
   function handlePlayerEvent(event) {
-    console.log('player event', event)
+    //  TODO: use this to highlight relevant parts in the editor
+    //console.log('player event', event)
   }
 
 </script>
