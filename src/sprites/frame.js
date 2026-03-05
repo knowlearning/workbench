@@ -110,7 +110,6 @@ export function createFrameOps({ frames, view, panZoom }) {
         .filter(([, v]) => Array.isArray(v) && v.length >= 6)
         .map(([k, v]) => `  ${k}: [${v[0]}, ${v[1]}, ${v[2]}, ${v[3]}, ${Number(v[4].toFixed(3))}, ${Number(v[5].toFixed(3))}]`)
         .join('\n')
-      console.log(`frames:\n${out}`)
     }, 150)
   }
 
