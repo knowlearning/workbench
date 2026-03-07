@@ -4,7 +4,7 @@
 
   const emit = defineEmits(['event'])
   const props = defineProps({ id: String })
-  const state = reactive(await Agent.state(props.id))
+  const state = reactive(await Agent.state(props.id).synced())
 
   const report = event => console.log(event)
 </script>

@@ -15,7 +15,7 @@
     "@fortawesome/free-regular-svg-icons": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/vue-fontawesome": "^3.0.8",
-    "@knowlearning/agents": "^0.9.186",
+    "@knowlearning/agents": "^0.9.189",
     "@knowlearning/editor": "^1.0.2",
     "@knowlearning/patch-proxy": "^1.3.4",
     "@vitejs/plugin-basic-ssl": "^2.1.4",
